@@ -1,0 +1,32 @@
+<title>PacketSwitch</title>
+<h3>‘Circuit’ Switching vs. Packet Switching</h3>
+This distinction <a href=Terminology.html>means different things</a> to different people.
+<a href=http://rogerdmoore.ca/PS/EvolRobD.html>Some</a> take circuit switching to mean that some fixed bandwidth is allocated to a circuit at call setup time.
+Tymnet routed a character stream thru the network via a circuit established at call setup, but allocated bandwidth, link by link, to that circuit only on demand.
+<p>The distinction I will draw is how individual characters navigate thru the network.
+In most networks that called themselves ‘packet switched’ characters are gathered into groups with a whiff of semantics, such as a line of text, or several lines.
+Then these characters are gathered into a packet and a destination address appended and the packet launched into the network proper.
+As packets arrived at intermediate network nodes the destination address from the new packet was consulted and the packet routed intact accordingly.
+Depending on the network the structure of such an address might make it efficient to route such packets.
+Internet follows this plan and some think it is easy to take your IP address with you when you move.
+Such practice is not compatible with efficient routing.
+Original distribution of 32 bit IP addresses allowed for fairly efficient routing.
+Some applications needed to avoid the latency of assembling a whole line of text and modes could deal with shorter packets.
+Packets optimized for lines of text did not handle individual packets efficiently.
+Packet switching could react to local congestion and failure with purely local solutions.
+<p>Circuit switching would choose a path thru the network for a session.
+A session would typically last from minutes to hours.
+A path thru the network was chosen by some program with global network knowledge  including current network loads.
+Each network node was notified of its limited role in the new circuit.
+In Tymnet a circuit passing thru a node would occupy about 64 bits of information in that node, plus occasional space for buffered characters.
+Characters would move thru the net as node CPU time and outbound links became available.
+A single character would take about 24 bits in such a block which sufficed to distinguish the character from data of other other circuits on the same link.
+Single strokes from a keyboard would travel in blocks over internode links intermingled with data from other circuits.
+Data from hosts would more typically move thru the new in blocks of a few 10s of characters.
+Upon link or node failure the session was interrupted and had to be rebuilt.
+The mean time to failure was a few days.
+In Tymnet a node needed to know only the identity of its immediate neighbors in order to help the centralized routers learn the current network topology.
+With circuits local back pressure was feasible which meant that links were used efficiently and data was very seldom dropped.
+When packet networks must drop packets when they arrive at a node with no space to store it.
+Tymnet back pressure generally blocked a host from sending until there was space to handle the data.
+The most common bottleneck was the terminal and sustained output would cause back pressure all the way to the host.

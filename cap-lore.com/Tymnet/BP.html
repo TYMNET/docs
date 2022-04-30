@@ -1,0 +1,406 @@
+<html><head><title>Routing and Flow Control in TYMNET</title>
+<STYLE TYPE=text/css MEDIA="screen, print">
+	h1	{font-size: 1.5em; font-weight: normal;text-align:center;}
+	h2	{font-size: 1em; font-weight: normal; text-align:center;}
+	h3	{font-size: 1em; font-weight: normal; font-style: italic;}
+	h4	{font-size: 1em; font-weight: normal; text-align:center;}
+	li	{margin-left: -1.5em;}
+	p	{text-indent: 1.2em;}
+	p.bi	{text-indent: -1.6em; padding-left: 1.6em;}
+	p.da	{text-indent: -2em; padding-left: 2em;}
+	span.FSS {font-size:small;}
+	span.lower {vertical-align: sub;}
+	span.raise {vertical-align: super;}
+</style></head>
+<body>
+<div>
+<p>IEEE TRANSACTIONS ON COMMUNICATIONS, VOL. COM-29, NO.4, APRIL 1981, pp 392-98
+<h2>0090-6778/81/0400-0392$00.75 © 1981 IEEE</h2>
+<p>
+<h1>Routing and Flow Control in TYMNET</h1>
+<h2>LA ROY W. TYMES, MEMBER, IEEE</h2>
+<h2><i>(Invited Paper)</i></h2>
+<p>Manuscript received April 23, 1980; revised August 15, 1980.
+<p>The author is with the Data Network Division, Tymshare, Inc., Cupertino, CA 95014.
+<p>
+<p style=font-weight:bold;><i>Abstract</i>— TYMNET uses two mechanisms for moving data: a tree structure for supervisory control of the original network and a virtual circuit approach for everything else.
+Each mechanism is described.
+The routing and flow control is contrasted with ideal routing and flow control, and also with conventional packet-switched networks.
+One of the mechanisms described, the virtual circuit as implemented in TYMNET, is compared to the ideal.
+This mechanism avoids several inefficiencies found in other packet networks.
+The tree structure is shown to have several problems which increase roughly with the square of the size of the network.</p>
+<h2>INTRODUCTION</h2>
+<p style=text-indent:0;><span style="float:left; font-size:250%; line-height: .8;
+border-style:none; border-width: 0px;font-weight:bold; font-family:  serif;">R</span>OUTING and flow control are the two most important factors in determining the performance of a network.
+They determine the response time seen by the user, bandwidth available to the user, and, in part, the efficiency of node and link utilization.
+TYMNET has several years’ experience with two different mechanisms of moving data through the network.
+The routing of one of them, the virtual circuit, is described in detail with emphasis on performance considerations.
+Flow control is then discussed with emphasis on heavy load conditions.</p>
+<p>TYMNET is a commercial value added network (VAN) which has been in operation since 1971 [1].
+The original network, now called TYMNET I, was designed to interface low-speed (10-30 character/s) terminals to a few (less than 30) time-sharing computers.
+The data rate was expected to be low, the size of the network small (less than 100 nodes), and the log-on rate low (less than 10 new users/min).
+High efficiency of the 2400 bit/s lines interconnecting the nodes was required along with good response time for the user, who typically interacted with full duplex terminals on a character-by-character basis.
+Echo control with full duplex terminals was to be passed smoothly back and forth between host and network.
+Finally, memory in the nodes was expensive, and little money was available for development and deployment.
+<p>With these considerations, the nodes were made to be as small as possible, with very little buffering.
+All complexity that could be centralized, such as routing control, was put into a supervisor program which ran on a time-sharing system.
+A virtual circuit scheme was devised which allowed a smooth flow of data to the users with the small buffers and which allowed the multiplexing of data from several users into a single physical packet.
+This way a user could type one character at a time without generating a lot of overhead on the network lines.
+<p>When a supervisor took control of the net, it generated a tree structure with itself at the root.
+Through this tree, it could read out the tables which defined the existing circuits and make new entries in them to define new circuits.
+This kept the software in the nodes very simple at the cost of complexity in the supervisor.
+<p>As the years passed, all the design considerations except the need for efficiency and interactive response were completely reversed.
+In particular, with many terminals requiring much higher bandwidth, with the number of nodes approaching 1000 worldwide, and the log-on rate measured in log-ons per second, many of the design decisions for TYMNET I became inappropriate.
+In TYMNET II, which is displacing TYMNET I in high-density areas and new installations, the features which worked well In TYMNET I have been enhanced and generalized.
+The supervisor control tree, however, did not scale up very well, and TYMNET II uses virtual circuits exclusively.
+<p>TYMNET II is a more recent technology than TYMNET I, not really a different network.
+In fact, both technologies can and do exist in the same network.
+TYMNET I was implemented in Varian 16-bit minicomputers.
+TYMNET II was implemented in the TYMNET Engine [2], a 32-bit byte addressable machine developed by Tymshare, Inc. specifically for network applications.
+A basic difference between the two technologies is that in TYMNET I the supervisor maintains an image of the internal routing tables of all the nodes and explicitly reads and writes the tables in the nodes, whereas in TYMNET II the nodes maintain their own tables, and there is much less interaction between node and supervisor.
+<h2>IDEAL ROUTING AND FLOW CONTROL</h2>
+<p>Before getting into the details of the machinery, we should be clear about what it is supposed to do.
+In routing, the first consideration is to find the “optimum” path, where the definition of the word “optimum” can be rather complex.
+It should also be fast, so that the impatient human user is not kept waiting.
+The ideal routing algorithm should use little CPU time and network bandwidth, since these are both scarce resources.
+It must base its decisions on the current state of the network, not on the state of the network a minute ago, since many things can change in a minute.
+Finally, it must not spend a lot of network bandwidth to keep its data up to date.
+The practice of passing tables from node to node becomes expensive as the network, and hence the tables, grows large.
+<p>The ideal flow control mechanism must assure a smooth flow of data to the low-speed user.
+In TYMNET, it must do this with small buffers in the nodes.
+If the user wishes to abort his output (a common thing for an interactive user to do), the data buffered in the network must disappear quickly.
+An additional consideration for a commercial network is that the network lines must be used efficiently.
+This means that all forms of overhead, such as end-to-end acknowledgment, deadlocks, discarding of packets, retransmission of data (other than for line errors), and so on, must be eliminated or greatly minimized, even if the user wishes to send just one byte at a time.
+<p>Interactive users will want fast response, so queuing delays must be kept short.
+Finally, when bandwidth on a link is oversubscribed, it must be partitioned among the various users in some satisfactory manner, without causing lockups, deadlocks, or other network malfunctions.
+<h2>THE TYMNET VIRTUAL CIRCUIT</h2>
+<p>
+<p>The TYMNET virtual circuit has been documented elsewhere [3, 4].
+For the purposes of this paper, let us defme it as a full duplex data path between two ports in the network.
+Data are always treated as a stream of 8-bit bytes.
+The two ports are usually, but not always, on two different nodes, and the circuit must therefore be routed through the network.
+The routing is normally done only once, when the user first requests that the circuit be built.
+If the circuit is rebuilt later (because of a node failure on the original path, for instance), the rebuild procedure is the same except for the recovery of data that may have been lost when the first circuit failed.
+<p>Each link between two adjacent nodes is divided into channels, and a circuit passing over that link is assigned to a channel.
+The communication between these nodes is concerned with channels, not circuits.
+Only the network supervisor knows about circuits.
+Data from various channels may be combined, or multiplexed, into one physical packet to share the overhead of checksums and packet headers among several low-speed channels.
+A high-speed channel with much data to send may use the whole physical packet by itself.
+<img src=BP_files/ZF1.png height=193 width=460 align=left>
+<p>An example of a simple circuit is given in Fig. 1.
+Port 4 on node <i>A</i> is connected through node <i>B</i> to port 7 on node <i>C</i>.
+A pair of buffers (represented by a circle), one buffer for each direction of data flow, is associated with port 4 in node <i>A</i> and another pair with port 7 in node <i>C</i>.
+Another pair is used in node <i>B</i> for traffic passing through it.
+Each buffer is elastic, like a balloon, so it takes little memory when it is empty.
+The data are stored in a threaded list of bufferlets of 16 bytes each (14 data bytes plus a 2-byte pointer to the next bufferlet).
+When more data are put into a buffer, additional bufferlets are taken from a common pool.
+When data are removed from a buffer, the empty bufferlets are returned to the common pool.
+An empty buffer has no bufferlets associated with it.
+Buffers in TYMNET are empty almost all the time.
+<br clear=left>
+<p>Each node has a table for each of its links, associating channels on that link with internal buffer pairs.
+Entry number 5 in a table in node <i>A</i> refers to the buffer pair for port 4, so data from port 4 are sent out on channel 5 on the link between <i>A</i> and <i>B</i>.
+Entry 5 in node <i>B</i> for that link refers to the passthrough buffer pair.
+Entry 12 in another table in node <i>B</i> also refers to the same passthrough buffer pair.
+This second table is for the link from <i>B</i> to <i>C</i>, so data from port 4 of node <i>A</i> will use channel l2 when going from <i>B</i> to <i>C</i>.
+Entry 12 in node <i>C</i> refers to the buffer pair associated with port 7, which completes the circuit.
+<p>All routing is done by the supervisor.
+It begins when the user identifies himself with a name and password, and presents a request to build a virtual circuit (log-in to a host).
+The supervisor hashes the user name into the MUD (master user directory) to get the attributes needed for access control, accounting information, and so on.
+Then the supervisor assigns a “cost” to each link in the net.
+This cost reflects the desirability of including that link in the circuit.
+This cost is based on link bandwidth, link load factor, satellite versus land-based lines, terminal type, and other factors.
+For instance, if the user has a low-speed interactive terminal, a 9600 bit/s land link will be assigned a lower cost than 56 000 bit/s satellite because satellites add a delay which is undesirable to interactive users.
+If the circuit is to be used to pass files between computers, however, the satellite will be assigned the lower cost because bandwidth is more important than response time.
+<p>A definition of link load factor will depend on what type of circuit is being routed.
+For instance, if a user wishes to pass files between background processes on two computers, response time is not required.
+High bandwidth is not needed either if the user is in no hurry.
+The objective is to move the data at the minimum cost to the network, which means giving the user the bandwidth left over from other users.
+A file moving from one computer to another can pass at a high enough rate to saturate any link.
+Such a link is not overloaded, however, since there is no reason not to build more circuits over it.
+<p>A second user may wish to run a line printer.
+He cannot saturate a link by himself because after the line printer is going full speed, it can use no more bandwidth.
+If several such users share the same link, they may saturate it and compete with each other for bandwidth.
+If the printers can no longer run at full speed, then the link has reached “high speed overload,” and it is not desirable to route more such users over this link.
+A longer route which avoids the congested link may be preferred, even though it increases cost to the network and increases response time.
+Printer users do not care about response time.
+It is all right to send interactive users over a link with high-speed overload because they require so little bandwidth that they will not interfere very much with the printers.
+The printers, on the other hand, will not interfere with the response time of the interactive user.
+<p>The most severe form of overload is “low-speed overload.”
+The formal definition of low-speed overload is that the average delay for a particular channel on a link to be serviced exceeds ½ sec several times in a 4-min period.
+When this happens, low-speed interactive users begin to experience degradation in response times.
+A high cost is given to such a link to avoid building more circuits on it.
+<p>Legal considerations also affect “cost.”
+For instance, there may be prior agreements that the traffic between two countries be divided among the interconnecting links in a particular way.
+These rules can be enforced by assigning unacceptable costs to the unallowed options.
+<p>This assigning of costs is not compute intensive.
+It is mostly a matter of indexing into the correct table.
+Once the correct table has been selected, there remains the problem of finding the path of lowest cost through the net.
+This is complicated by the fact that some users may have more than one possible target.
+For instance, there may be several gateways to another network, and the cost of the gateways and the other network may have to be considered.
+The one path which produces the “best” load balancing is preferred.
+<p>The problem of finding the best path through a network has been investigated by many people [5] - [7].
+The algorithm that TYMNET has been using is as follows.
+<p><i>T1</i>: Initialize the cost of reaching the source node from the source node to 0.
+Initialize the cost of reaching all other nodes from the source node to an unacceptably large, finite number.
+<p><i>T2</i>: Initialize a list of nodes to contain only the source node.
+<p><i>T3</i>: If the list is empty, done.
+Otherwise, remove the next node from the list.
+For each neighbor of this node, consider the cost of going to that neighbor (the cost associated with this node plus the cost of the link to the neighbor).
+If this cost is less than the cost currently associated with that neighbor, then the newly computed cost becomes the cost associated with that neighbor and a path pointer for that neighbor is set to point to this node.
+If that neighbor is not on the list and the new cost is less than the cost associated with the target node, add the neighbor to the list.
+Repeat T3.
+<p>When the algorithm completes, the path of minimum cost is defined by the backward pointers.
+Furthermore, the minimum cost is precisely known.
+If the cost is high, the supervisor may elect to reject the user rather than tax the network to provide poor service.
+<img src=BP_files/ZF2.png height=343 width=425 align=left>
+<p>A trivial example is given in Fig. 2.
+The problem is to find the path of least cost from node <i>A</i> to node <i>D</i>.
+The cost associated with node <i>A</i> is set to 0, and for all the other nodes it is set to 99.
+Node <i>A</i> has two neighbors, <i>B</i> and <i>C</i>,  and the cost of each of them can be improved by going to them from node <i>A</i>,  so both are added to the list.
+When node <i>B</i> is considered, the cost of neighbor <i>D</i> is reduced by reaching it from <i>B</i>,  but it is not added to the list because the new cost is not less than the cost of reaching the target node (since <i>D</i> is the target node).
+Finally, when <i>C</i> is processed, the cost for node <i>D</i> is further reduced, redefining the best path from <i>A</i> to <i>D</i>,  and the cost for node <i>E</i> is also reduced.
+Node <i>E</i> is not added to the list because its cost is not less than the cost already associated with the target node D.
+Nodes <i>F</i> and G were never considered.
+The best path is seen to be from <i>A</i> to <i>C</i> to <i>D</i>,  and has a cost of 3.
+<br clear=left>
+<p>There are other algorithms which require less CPU time than this one, but of those known to the author, all are more complex and require more memory.
+This algorithm has been satisfactory for TYMNET so far.
+<p>Mere important than the algorithm itself is the mechanism for correctly determining link costs.
+If the link costs are incorrect or inappropriate, the resulting circuit path will be unsatisfactory.
+Any time the network capacities change, e.g., link failure or overload, the supervisor is notified immediately and can use this information for the next circuit to be built.
+In TYMNET II, the next step is to send a needle to the originating port.
+This needle contains the routing information and threads its way through the net, building the circuit as it goes, with the user data following behind it.
+In TYMNET I, the entries in the routing tables are explicitly made by the supervisor for every node.
+<p>The TYMNET II needle is a list of node numbers, together with accounting information and some flags indicating circuit class, encoded as a string of 8-bit bytes.
+When data enter a TYMNET II node from a link on an unassigned channel, it is checked to see if it is a needle.
+If it is not, it is discarded.
+Otherwise, the channel is assigned and the needle checked to see what to do next.
+If the circuit terminates in this node, it is attached to a port.
+If the next node is a neighbor of this one, a channel on the link to that node is assigned and the needle, together with any other data behind it, is sent on its way.
+If the next neighbor is unknown (because of recent link failure or some other error), the data are destroyed and the circuit is zapped back to its origin.
+<p>Note that a needle followed by some data followed by a nongobbling zapper is similar to a datagram, one which contains explicit routing information.
+Thus, TYMNET II has a type of datagram capability, although it is not used.
+<h2>VIRTUAL CIRCUIT FLOW CONTROL</h2>
+<p>The following analogy will help make clear the dynamics of TYMNET virtual circuit flow control.
+A building with many water faucets in it is supplied by one water pipe coming from a water main.
+If a faucet is turned on, water immediately flows out of it and water begins flowing in from the main.
+The main can supply water at a much faster rate, but the rate of flow is restricted by the faucet.
+When the faucet is turned off, the resulting backpressure stops the flow from the main instantly.
+If enough faucets are turned on simultaneously, the capacity of the pipe from the main may be oversubscribed.
+When this happens, faucets which are turned on only a little still get all the water they want, but faucets turned on all the way will not flow at their maximum rate.
+If any faucet is turned off, the water it was consuming is now available to the remaining faucets.
+Note that there is no machinery in the water pipe from the main to allocate the water.
+It is just a pipe and does not know or care where the water goes.
+Also note that when the capacity is oversubscribed, all faucets that want water still get some.
+Some faucets get less than they want, but they do not stop.
+Finally, note that no water is wasted.
+It does not have to be “retransmitted” to compensate for water spilled.
+<p>For each channel on a link between two nodes, there is a quota of 8-bit bytes which may be transmitted.
+This quota is assigned when the virtual circuit is built, and varies with the expected peak data rate of the circuit; in other words, the throughput class of the circuit.
+Once a node has satisfied the quota for a given channel, it may not send any more on that channel until the quote is refreshed from the other node.
+In TYMNET II, the receiving node remembers approximately how many characters it has received on a channel, so it knows when the quota is running low.
+It also knows how much data it is buffering for this circuit, and whether its total buffer space is ample.
+This last consideration is almost always true in TYMNET because at any given instant, most circuits are idle, at least in one direction, and no memory is needed for their empty buffers.
+<p>When the quota is low or exhausted and the receiving node does not have enough data buffered for the circuit to assure smooth data flow, it sends back permission to refresh the quota for this channel.
+This permission is highly encoded so as not to require much bandwidth.
+Note the passive nature of this backpressure scheme.
+Doing nothing is the way to stop the influx of data, so if a node is overloaded, one effect of the overload is to reduce the load.
+Also note that this mechanism does not know or care about the destination of the data on each channel.
+Backpressure propagates from node to node back to the source and effectively shuts it off.
+It does not matter whether the cause of the backpressure is inability of the destination to consume the data as fast as the source can supply it or congestion within the net.
+Either way, the source is quickly slowed down or shut off.
+Finally, note that only circuits which are actively moving data need attention.
+At any instant, this is a small percentage of the total number of circuits.
+<p>A complication arises when an interactive user realizes that what is printing on his terminal is of no interest to him and he wishes to stop it.
+He can type an abort command and the host computer may stop outputting, but there are still many characters buffered in the network.
+To clean out the circuit, the host can send a character gobbler.
+The character gobbler ignores backpressure and goes through the circuit at full speed, gobbling all characters in front of it.
+<p>Another exception to normal backpressure convention is the circuit zapper.
+When a session is over and one or both ports disconnect, a circuit zapper is released which not only gobbles up the characters, but releases the buffer pairs and clears the table entries as well to free up these resources for new circuits.
+A zapper must be able to override backpressure because some circuits may stay backpressured for a long time.
+Suppose, for instance, that the terminal is an IBM 274l with the keyboard unlocked.
+It cannot accept output in this state, so output data remain buffered and backpressured in the net, waiting for the user to lock his keyboard.
+The zapper will not wait, but will clear his circuit and disconnect him.
+<p>TYMNET I has only one circuit zapper, but TYMNET II has a family of them.
+Each is generated by a different terminating condition, so that the port at the other end knows why the circuit is being zapped.
+There are hard zappers and soft zappers.
+A hard zapper disconnects the port, but a soft zapper allows the port to request a circuit rebuild.
+A soft zapper might be generated by a link failure, for instance, and a rebuilt circuit will allow the session to continue.
+A short history of characters sent may be kept at each end, so that when the circuit is rebuilt, data lost when the old circuit failed can be retransmitted.
+This is transparent to the user, and there is normally no indication that an outage has happened unless it is a special host that wishes to monitor such things.
+No user data are lost or allowed to get out of order.
+Note that there is no overhead on the links to provide this feature except briefly when the circuit is rebuilt.
+<p>In theory, TYMNET II could use this rebuild mechanism to redistribute network load, but in practice, it is not needed.
+Circuits come and go often enough that the supervisor has no difficulty redistributing load by proper routing of the new circuits.
+When the numbers of users are very large, as they are in TYMNET, a statistical approach to load leveling works well.
+The load on any small area of the net changes very little from one minute to the next.
+<h2>PACKET TRANSMISSION AND BANDWIDTH ALLOCATION</h2>
+<p>To move data from one node to another, they must be assembled into packets.
+Since the greatest value of a value-added network is the sharing of line costs among many users, this must be done as efficiently as possible.
+The packet maker is a process which builds physical packets to send over a link.
+It will build a packet when there are data to send and the window of outstanding packets for the link is not full.
+The packet may contain data from several channels or from just one channel if only one channel has data to send or if a channel has so much data to send that it can fill a full length packet.
+A channel may send data if it has data to send, its backpressure quota is not zero, and if it has not had a turn recently.
+Once it is serviced, even if for only one byte, it is not serviced again until all other channels have had a chance (unless it is flagged as a priority channel, in which case it may be given extra turns to give it more bandwidth).
+On any particular turn, a channel is limited in the amount of data it may send by the amount of data in its buffer, its backpressure quota, and the amount of room left in the packet when it is serviced.
+Thus, when bandwidth is oversubscribed, channels which only need a little get what they want with little or no queuing delays, while channels that want all they can get share the remaining bandwidth equally (except for priority channels, which get extra bandwidthe at the expense of nonpriority channels).
+<p>Packet making and teardown are link-related processes.
+Once a packet is made, it is handed over to the packet transmitting and receiving processes, which are line-related.
+A line is a physical connection between nodes, and is subject to noise and outages.
+There may be several lines on one link, for instance, three 9600-bit/s lines, all passing data in both directions simultaneously.
+There are several different packet transmitters and receivers because there are several different kinds of hardware for moving data between nodes.
+They differ in data rate, interface requirements, checksumming and formating, and in methods for getting data in and out of memory.
+Window size, which is the number of packets one may send before getting an acknowledgment, varies from 4 to 128, depending on the maximum number of outstanding unacknowledged packets likely in the absence of errors.
+When the window size is exhausted, the oldest packet is retransmitted (on all lines, if there is more than one line on this link) until it is acknowledged.
+Packets may be sent and received in any order, but are always built and torn down in sequence.
+<img src=BP_files/ZF3.png height=275 width=490 align=left>
+<p>It is instructive to contrast TYMNET with ARPANET in an overload situation.
+In Fig. 3, assume that node <i>A</i> has high bandwidth access to sources of data bound for ports on nodes <i>B</i>, <i>D</i>, and <i>E</i>.
+Also assume that the links shown are of equal bandwidth and that nodes <i>B</i>, <i>D</i>, and <i>E</i> have equal appetites for data.
+In a packet-switched network, data from the sources to node <i>A</i> will be in packets to be distributed equally among nodes <i>B</i>, <i>D</i>, and <i>E</i>.
+Two thirds of these packets must be sent to node <i>C</i> and one third to node <i>B</i> However, the bandwidths to nodes <i>B</i> and <i>C</i> are the same, so node A can send only half as much data to <i>B</i> as to <i>C</i> When <i>A</i> fills up with packets, it must reject all incoming packets, not just those bound for nodes <i>D</i> and <i>E</i>.
+Thus, the link to node <i>B</i> runs at half speed because of congestion on the link to node <i>C</i>.
+<p>Now suppose that the link from <i>C</i> to <i>D</i> goes out.
+<i>C</i> will wait a few seconds to be sure the link is out before discarding packets for <i>D</i>.
+In the meantime, it fills up with packets for node <i>D</i> and stops receiving packets from node <i>A</i>.
+Node <i>A</i> is already full of packets for nodes <i>D</i> and <i>E</i> so it stops receiving packets from the sources.
+Now all traffic is stopped and the network is vulnerable to deadlocks which will require that packets be discarded at random and retransmitted.
+ Even after node <i>C</i> starts discarding packets for node <i>D</i>, the sources for node <i>D</i> may try to retransmit their packets until they realize that node <i>D</i> can no longer be reached.
+<br clear=left>
+<p>The reader may wish to construct more complex topologies which involve dynamic rerouting and bi-directional data flow.
+The general conclusion from these exercises is that <i>when ARPANET-like networks are oversubscribed in any area, they respond with poor efficiency in other areas</i>.
+In general, the problems become more severe as the size of the network and the volume of user traffic increases.
+In the author’s opinion, an ARPANET-like network the size of TYMNET would give very poor performance.
+Of course, there are other considerations in the choice of one network architecture over another, but performance in the presence of overload is one of the most important for a commercial network.
+<p>In TYMNET, since the flow control applies to each direction of each channel of each link separately, the traffic bound for nodes <i>D</i> and <i>E</i> would be backpressured independently from the traffic bound for node <i>B</i>.
+The link from <i>A</i> to <i>B</i> would therefore run at full speed.
+When the link from <i>C</i> to <i>D</i> went out, the traffic for <i>D</i> would backpressure to the sources for <i>D</i> and the bandwidth on the link from <i>A</i> to <i>C</i> would be completely available for traffic bound for <i>E</i>.
+When <i>C</i> realized that the link to <i>D</i> was down, the circuits for <i>D</i> would be zapped back to the sources for <i>D</i>.
+These sources would then either give up or request a rebuild from the supervisor.
+The supervisor would reject the rebuild requests on the grounds that there is no longer a path to node <i>D</i>.
+At no point would any bandwidth be compromised.
+No deadlocks would occur.
+In fact, nothing like a deadlock has ever been observed in TYMNET circuits.
+Situations like this one occur several times a day in TYMNET, and the only harm done is that, when a link is oversubscribed, some users get less bandwidth than they would like.
+
+<p>After many years’ experience with this method of routing and flow control, the only complaint we have with it is the amount of CPU time required to assemble and disassemble the physical packets.
+Packet-switched networks do not have this overhead since the packets merely pass through the node without being torn apart.
+We have implemented the more compute bound portions of these processes in microcode in our TYMNET Engine[2] and can sustain throughputs in excess of 25 000 bytes/s (25 000 in and 25 000 out), which has been adequate so far.
+A proposed enhancement, so far not implemented, is to allow a circuit to enter a “blast” mode in which it only uses full-sized physical packets.
+These packets would be so tagged and buffered separately to avoid the need to tear them down and reassemble them.
+Through any one node, only a few circuits could be in blast mode at a time because of limited buffer space, and a circuit would be in blast mode only while moving data at a high rate.
+Regulation of the buffer space would be handled by the standard flow control procedure.
+The primary application for this special mode would be me transfers between computers over very high bandwidth communication lines.
+In this mode, the throughput of an Engine might be about 200 000 bytes/s.
+The exact limit would depend on the method of getting the data in and out of memory.
+<h2>FLOW CONTROL THROUGH GATEWAYS</h2>
+<img src=BP_files/ZF4.png height=265 width=402 align=left>
+<p>TYMNET has many gateways, some to private or experimental networks using TYMNET technology, and some to networks quite alien to TYMNET.
+Fig.
+4 illustrates the case where both networks use TYMNET technology.
+The node in the center is called “schizoid” and has two identities, one for each network.
+Within each network, each node number must be unique.
+The schizoid node has two numbers.
+In this case, it is known as node 12 to the supervisor of network <i>A</i> and node 2073 to the supervisor of network <i>B</i>.
+Each supervisor claims the node as its own and sees the other network as a host computer, which can originate and terminate circuits.
+It is possible for one supervisor to see the schizoid as a TYMNET I node, while the other sees it as a TYMNET II node.
+Each supervisor is responsible for circuit routing and resource allocation within its own network.
+<br clear=left>
+<img src=BP_files/ZF5.png height=207 width=443 align=left>
+<p>Fig. 5 illustrates a TYMNET gateway to it different type of network.
+The actual interface is commonly an X.75 format on a high-speed synchronous line.
+Again, the TYMNET supervisor sees the other network as a host.
+The structure of any particular gateway is dictated by the sophistication of the other network and the availability of manpower to design the interface.
+In theory, it is certainly possible to build a schizoid node between TYMNET and any other network.
+This would be the most efficient interconnection, and would make the flow control work as well as the other network would allow, but so far the X.75 approach has been satisfactory.
+It has the advantage of keeping the two networks truly separated from each other, both organizationally and technically.
+<br clear=left>
+<h2>TREE STRUCTURE FOR TYMNET I CONTROL</h2>
+<p>In the original TYMNET, the nodes were very small and the software primitive.
+They had no ability to process circuit-building needles.
+Instead, the supervisor maintained their internal tables directly.
+When the supervisor took control of the network, it, first took control of the node nearest to itself, then the neighbors of those nodes, then the neighbors of those nodes, and ,so on.
+When a node was taken over on a link, that link became its upstream direction.
+A special channel on each link was dedicated to supervisory traffic.
+All such traffic consisted of 48-bit messages, either to the supervisor (upstream) or to the node, (downstream).
+In this tree structure, upstream was always well defined.
+Any node wishing to send something to the supervisor sent it in the upstream direction, and it would proceed to the root of the tree.
+Downstream, however, had many branches.
+To get a message to a particular node, the supervisor had to first set switches in the intervening nodes so that each node would know which of its links was the downstream link.
+<p>When the net was small, the scheme worked fairly well.
+It was simple to implement and required little software.
+However, as the network grew beyond 200 nodes, problems occurred.
+<p>One obvious problem was that the routing was haphazard.
+It simply happened as, a result of the order in which the nodes were taken over.
+If major control link failed, the nodes which were downstream of the failure were retaken from another direction, perhaps a less optimum direction than before.
+The time required to get data to and from the nodes could be excessive.
+<p>The second problem was the flow control.
+At first there was no flow control.
+The volume of data was so small that none was needed.
+As the nodes grew in size, so did their tables.
+At the same time, the numbers of nodes grew.
+Because TYMNET I required the supervisor to know the contents of the routing tables in all the nodes, one thing the supervisor had to do when it took over the network was read all the tables.
+The data volume grew to hundreds of thousands of bytes.
+Obviously, something was needed to prevent nodes near the supervisor from running out of buffer space at takeover time.
+<p>The ad hoc solution that was applied was for a node to backpressure the upstream supervisor channel when the node had too much supervisory data in it.
+The node could still send data to the supervisor, but the supervisor (could no longer send data to it.
+Since most supervisory traffic is either generated by the supervisor or generated in response to the supervisor, this had the effect of allowing the data to drain out of the congested area of the net.
+Temporarily, the supervisor was cut off from that portion of the net.
+What is worse is that the backpressure could easily back up into the supervisor itself, thus cutting it off from the entire network.
+<p>Another problem was the misbehaving node.
+If some node had a software bug which caused it to generate a lot of supervisory traffic, it could flood the tree structure, turn on backpressure at some points, and, in general, make it difficult for the supervisor to retain control.
+In a tree structure, there is no good way to selectively apply backpressure to a node of the tree without affecting other nodes downstream of it.
+<p>The most troublesome problem for, TYMNET I was the “deadend circuit.”
+To build a circuit, the supervisor had to send commands to each node involved with the circuit to set up the routing tables.
+If, because of loss of data in the supervisory tree, e.g., due to a link failure, some commands made it and some did not, the result was that only pieces of the circuit could get built.
+Not only would the user not be connected, but some unreachable (therefore unzappable) circuit fragments would remain to clutter the tables.
+Furthermore, the image in the supervisor of the routing tables would no longer agree with the tables in the nodes.
+For these reasons, the tree structure was abandoned for TYMNET II.
+The supervisor builds a separate virtual circuit to each node at takeover time and controls the node through that circuit.
+<h2>SUMMARY</h2>
+<p>Since TYMNET was brought up in 1971, it has never been down.
+Nodes, lines, and even the supervisor have all had their failures, but there was never a moment when some part of the network was not running and able to do useful work.
+The TYMNET virtual circuit, with its associated routing and flow control, has stood the test of time in a commercial environment.
+Its efficiency and robustness when faced with a wide variety of overload and failure conditions closely matches the ideal.
+It has scaled very well from a rather small network to a very large one.
+The size of TYMNET provides abundant feedback to any changes in the machinery, which allows a quick check of theory against reality.
+The evidence so far is that the virtual circuit approach is entirely satisfactory.
+<p>The tree structure, on the other hand, did not scale very well.
+While quite acceptable in the original network, the absence of controlled routing and sloppy flow control proved inadequate as the volume of supervisory data grew and the average distance between node and supervisor increased.
+For this reason (and several others, such as the difficulty of maintaining synchronism between the tables in the nodes and the images of those tables in the supervisor), this type of control structure is not used in TYMNET II.
+<p>The routing takes into account all factors known at the time the circuit is to be built and attempts to find the “optimum” path, both for the user and for the network.
+The network overhead required to keep the supervisor informed about link outages and other factors that might affect routing is small.
+The overhead required to build the circuit is small, especially in TYMNET II.
+Normally, the response time to a circuit build request is less than two seconds, which is acceptable to most users.
+Load balancing is accomplished through proper routing of new circuits, according to the expected demands of the new circuits and the current network load.
+The centralized routing control, where all information required for optimum global strategy is available to a single program on a single computer (not counting the inactive backup supervisors) has proven to be fast, efficient, and versatile.
+<p>How large TYMNET can be and still be controlled by a single centralized supervisor is difficult to answer.
+For TYMNET I the answer appears to have been from 500 to 600 nodes because of the volume of data transferred between nodes and supervisor, combined with the damage done when any of that data was lost.
+For TYMNET II, however, it is probably at least 5000 nodes.
+When that limit is reached, regionalized networks connected with gateways are the most obvious answer and would require no new development.
+A possibly more efficient approach would be a “super” supervisor managing global strategy while delegating local routing to “sub” supervisors.
+The question may become academic before any limit is reached.
+Perhaps 5000 nodes is enough to cover the entire market.
+Also, value-added networks may soon be obsolete.
+Telephone networks of the future will be digital.
+Bandwidth between central offices will be very large and inexpensive, and the offices themselves will be automated.
+The cost of the telephone network will be largely in the local loops to the customer locations, since installation and maintenance of the local loops is labor-intensive and will not benefit from technology advances as much as the rest of the system.
+In such a situation, the “value” of the value-added network disappears, and straight forward digital circuit switching will be the most cost-effective way to connect the intelligent terminal with the sophisticated computer.
+<h2>REFERENCES</h2>
+<p class=bi>[1] <a href=../Tymnet/TOCN.html>L. Tymes, “TYMNET—A terminal oriented communications network,” in Proc. AFIP SJCC Spring 1971. pp. 211-216. </a></p>
+<p class=bi>[2] L. Tymes and J. Rinde, “The TYMNET II Engine,” in Proc. ICCC 78. Int. Conference on Computer Commununication, Sept. 1978,</p>
+<p class=bi>[3] J. Rinde, “TYMNET I: An alternative to packet switching,” in Proc. 3rd ICCC 76,</p>
+<p class=bi>[4] M. Schwartz, Computer Communication Network Design and Analysis. ch. 2. Englewood Cliffs, NJ: Prentice-Hall, 1977,</p>
+<p class=bi>[5] E. W. Dijkstra, “A note on two problems in connexion with graphs,” Numerisch Mathematik vol. I, pp. 269-271, 1959.</p>
+<p class=bi>[6] J. Gilsinn and C. Witzgall, “A performance comparison of labeling algorithms for calculating shortest path trees,” Naional Bureau of Standards, Washington, DC, Tech. Note 772, 1973.</p>
+<p class=bi>[7] D. R. Shier. “On algorithms for finding the k shortest paths in a network,” Networks, vol. 9, pp. 195-214, 1979.</p>
+<h2>*</h2>
+<p>
+<img src=BP_files/RoyTymes.jpg title="La Roy Tymes in 1980" height=363 width=295 align=left>
+<p>La Roy W. Tymes (M’79) received the B.S. degree in mathematics in 1966 and the M,A. degree, also in mathematics, in 1968, both froin California State College at Hayward.
+<p>He joined Tymshare, Inc., in 1968 and has been involved in network development ever since.
+His duties have included design and implementation of the original TYMNET, supervision of network development, design and microcoding of the TYMNET Engine, and systems programming of Tymshare’s time-sharing systems.
+He has also been a consultant for numerically controlled machine tools and development of custom LSI.
+His research interests include subnanosecond LSI, supercomputers, and wide-band digital communication.
+</div></body></html>

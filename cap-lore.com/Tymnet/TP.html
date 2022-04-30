@@ -1,0 +1,56 @@
+<html><head><title>Tymnet Protocols</title>
+</head><body>
+<h3>Some Internal Tymnet Protocols</h3>
+The virtues of various Internet protocols have been well described in various publications.
+Here is a fragmentary sketch of some Tymnet protocols and advantages some of them relative to those of Internet.
+<h4>Tymnet Link Protocols</h4>
+The basic contract of the network proper is to carry streams (not packets) of characters.
+A circuit is full duplex and follows a route fixed upon creation (login) by a central network supervisor.
+A circuit is composed of two streams, coming and going.
+There are just a <a href=Balls.html>few escape characters</a> that are significant to the intermediate nodes and a few more significant to the edge node that communicates directly with the ASCII terminal.
+The same stream format is delivered to and accepted from the various Tymnet-native hosts.
+Tymnet itself imposes no packet format on the streams.
+<p>Information on a link between two Tymnet nodes is organized into packets and error controlled separately on each link.
+A link transmission error is repaired with no extra traffic except on that link.
+Hosts are not involved in this error control.
+Each node has a byte queue for each stream passing thru the node.
+Packets for a link are composed of bytes from active streams.
+They are assembled just before transmission from queues with characters for that link.
+Flow control, which we called “back-pressure” is also link by link and stream by stream.
+Twice a second a control packet flows upstream on each link with a bit per downstream stream.
+This provides “bang-bang” control.
+Lost control packets were taken to mean “stop”.
+Laroy says <a href=../Nets/TymnetFlow.html>more about these things</a>.
+<h4>Routing in Tymnet</h4>
+At each Tymnet node there is for each circuit thru that node:<ul>
+<li>A pair of variable size character buffers, one for each direction,
+<li>Identification of the two links on which the circuit passed the node,
+<li>For both of these links an 8 bit circuit identifier by which the node at the other end of the link would identify traffic for the circuit.
+<li>A bandwidth indicator.
+(Originally there were 0 bits, then 1.
+Later there may have been more.)
+</ul>
+For each link at a node there is:<ul>
+<li>a table of buffer pair locators.
+The table is indexed by the 8 bit circuit names from traffic arriving on the link.
+<li>A parallel table of bits indicating a downstream invitation for more data.
+</ul>
+Physical packets are check-summed and classic error control is performed between nodes.
+A packet carries many segments which are each data from a different circuit.
+Each segment carries its 8 bit circuit ID and character count.
+<P>Note that these 8 bit circuit IDs are typically different for each link that a circuit traverses.
+They are like Cisco’s tag in their “<a href=http://www.ietf.org/rfc/rfc2105.txt>tag routing</a>” scheme, or perhaps like the labels in the MPLS proposal.
+<h4>Efficiency, vs. Internet</h4>
+There are several efficiencies in these schemes.
+Note that the traffic on a link has better thru-put when the link is backlogged.
+That is because the physical “packets” on the link are larger under load, and have a favorable ratio of payload to header.
+Under lighter load they are small which provides better latency.
+Due to link by link flow control there are virtually no lost packets.
+Internet packets lost on one link (due to congestion) may cause extra traffic on other links (due to end-to-end retransmission).
+This phenomenon can lead to gridlock.
+The “slow start” protocol, presumably governing most Internet traffic, is unable to employ sporadic dips in link traffic.
+In Tymnet, by contrast, there are many bytes queued for any congested link ready to go on a millisecond’s notice, should the load decrease.
+<p>Single keystrokes, now less common perhaps, travel thru the congested net using 24 bits on each link including overhead.
+This is the portion of a physical packet consumed by an isolated character on a circuit.
+</body>
+</html>

@@ -1,0 +1,65 @@
+<title>Tymnet II</title>
+Laroy tells me that routing control for Tymnet II has not been described in writing.
+That seems like an important oversight as it solved some real problems and also opened the way to simultaneous supervisors.
+We did not implement simultaneous supervisors but I may describe at the end here what more was needed.
+<p>Both versions of Tymnet supported circuits thru the net for the duration of a user session.
+A packet would arrive at a Tymnet node thru a link, have error control applied to the packet, and then be decomposed into circuit bursts of a few characters.
+Such a burst would be identified by a “channel number” which was from a name space unique to that link.
+The channel number served to index into a routing table per link which identified the outgoing link for this circuit and a channel number for the link.
+The data for the burst was copied into a FIFO buffer for the outgoing circuit.
+When the opportunity arose a packet was built for the outgoing link which found its data from its buffers.
+Soon error control for the sending side was computed and packet launched.
+<p>A burst is composed of a channel number, an octet count, and that many octets.
+<P>Both versions of Tymnet worked like this.
+They differed in how the supervisor wrote the routing tables.
+<a href=BP.html>This</a> is a more expansive description than the above and newcomers will need it.
+<h3>Tymnet I</h3>
+Each node had a mutable “downstream pointer” which was a link ID to route missives from the supervisor.
+Missives included a counter that was decremented as the missive was passed on down stream.
+If the counter was zero then the missive was for the current node and one of the payloads of such a missive was “Change that there routing table entry thus.”.
+Thus the supervisor knew absolute addresses in several deployed versions of nodes and this was a problem.
+<a href=../Hardware/PCIe/PCIf.html>Here</a> I propose some ideas for PCIe along these lines.
+<h4>Tymnet II</h4>
+This was all Laroy’s invention.
+First the downstream pointer was abandoned.
+The supervisor built circuits to whichever nodes it needed to talk with.
+To build a circuit the supervisor required talking to a node at either end of the new circuit.
+
+That node would be instructed to launch a “needle” command.
+Nodes numbered their neighbors with 4 bit numbers and the supervisor knew how each node numbered its neighbors.
+A needle was a new notion which consisted of k elements for a circuit that was to traverse k links.
+An element named an outgoing link.
+The needle would pass thru the net, getting shorter, leaving a circuit behind.
+The nodes kept track of which channels were in use and the nodes were thus in a position to allocate channels to the new circuit.
+The supervisor no longer needed to remember channel numbers.
+This was a big load off of the supervisor.
+<p>There was a zapper signal that could be launched under various circumstances that traveled along a circuit deallocating channels and corresponding buffers.
+The supervisor kept track of how many channels were available on each link.
+<h4>Tymnet III</h4>
+We did not implement this but I gradually realized that this plan was close to implementing multiple supervisors.
+I think Laroy realized this first before Tymnet II was live.
+Each supervisor would hold some portion of the unallocated channel capacity on each link.
+Messages between supervisors would transfer such capacity back and forth as needed while maintaining that the sum over supervisors of some link would remain accurate.  
+The supervisors could asynchronously launch needles and nodes could process them in any order.
+Neighboring nodes would need to coordinate between themselves which node had authority to allocate a channel lest two needle collide on a link in the same channel.
+<h3>Terminology</h3>
+Terms in italics are introduced for this presentation.
+Other terms pervade Tymnet papers.
+<dl><dt>Node<dd>a real mini computer of which there were roughly 1000 scattered geographically.
+<dt>Link<dd>a full duplex line leased from the phone company terminated by a digital modem at each end. The modems were connected to nodes.
+<dt>Supervisor<dd>A program running on some machine larger than a node which directed the creation of new circuits.
+<dt><i>Missive</i><dd>Message from the supervisor to some node.
+Here such missives concern new circuits.
+<dt>Circuit<dd>full duplex path thru some sequence of nodes where successive nodes shared a link.
+Circuits lasted for and served a session where some user who had dialed into some access point attached to node needed to reach some host connected to the network.
+<dt>Channel<dd>a subdivision of a link.
+Channels numbers identified data on that link and served as indexes into tables in the nodes at each end of the link.
+<dt><i>Packet</i><dd>A collection of data built up to use a link efficiently.
+Packets were torn down each time the reached a node.
+New packers were constructed to carry data on each link.
+Packets are composed of error control and bursts.
+<dt><i>Burst</i><dd>a few characters from some circuit indirectly identified by a channel number in the burst.
+<dt>Buffer<dd>a resting point for the data for some direction of some circuit.
+<dt>Needle<dd>a small data structure created by the supervisor describing a circuit to be built.
+It is shipped to the originating end of the new circuit and each node reacts to it by selecting a new channel on the link identified in the needle.
+The needle then passes thru the new channel to the next node.</dl>

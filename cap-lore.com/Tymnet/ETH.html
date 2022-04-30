@@ -1,0 +1,135 @@
+<html><head>
+ <title>Roots of Tymnet</title>
+</head><body bgcolor=#E0FFF0>
+To reviewers: Please try to think of other contributors.
+When did Joe Rinde come? Art Caise? What other dates can you reconstruct?
+<h3>The Origins of Tymnet</h3>
+Here is a rather detailed description of Tymnet.
+<p>Tymshare began operations in 1966 providing timesharing service on the SDS 940.
+The machine came from Scientific Data Systems with “CTE equipment” that attached about 16 terminals or modems, each with an RS232 voltage mode plug.
+Until recently modems had the same shape plug.
+The only practical terminal then was the model 33 Teletype from Teletype corporation, a subsidiary of Western Electric.
+It ran at 110 baud yielding 10 characters per second.
+It was upper case only, heavy and noisy.
+It was also cheap and reliable.
+<p>During the first year or so customers dealt with the phone company to reach our computer center in Palo Alto, California.
+Most were in toll free calling radius.
+We soon established another computer center near Los Angeles and developed a largely disjoint set of customers there.
+We planned further expansion.
+<p>There were frequency division multiplexers on the market that would handle about 16 Teletype circuits over one voice grade line.
+Each user was assigned a frequency and full duplex leased voice lines would connect the multiplexers.
+We tried these but they were expensive and error prone.
+Mini computers, costing several thousand dollars, were then becoming available and it seemed clear that they could do a variety of communication tricks which would soon pay their way in saving communications costs.
+Laroy Tymes joined Tymshare in 1968 from Lawrence Livermore labs to help us in this adventure.
+Howard Steadman, already at Tymshare, dealt in hardware and encouraged us to suggest innovative solutions to interfacing with modems.
+Dave Schmidt was vice president of Tymshare and understood the technical and economic advantages to Tymshare of these schemes.
+Laroy wrote almost all of the early Tymnet code.
+He and I did the design.
+<p>At that time the phone company (AT&amp;T) was considered a natural monopoly.
+They held that modems were the sole province of the telco.
+Tymshare had already produced acoustic couplers that competed with the telco’s <a href=ftp://bitsavers.informatik.uni-stuttgart.de/communications/westernElectric/modems/103A_Interface_Specification_Feb67.pdf>103A datasets</a> (dataset = modem), but AT&amp;T’s lawyers <a href=../books/Temin.html>were busy fighting</a> what they considered to be more serious encroachments on their turf.
+<p>Initially we found a strange little computer called the <a href=http://bitsavers.trailing-edge.com/pdf/generalAutomation/spc12/SPC-12_Brochure_1968.pdf>SPC12</a>.
+It had 4K of 8 bit words.
+Most significantly it had parallel input and output, 12 bits wide, that could be interfaced with modems with simple voltage converters.
+The software would prepare and time the signals and there was no hardware devoted to timing the bits for each communications line.
+Precursors to this plan <a href=../stories/LLNL_history/norman_hardy_1.html#ttys>had been done at Livermore and in military applications before that</a>.
+<p>The first deployment used the SPC12 as a fixed time division multiplexor, providing full duplex service for 29 terminals, each running at 110 baud.
+Pairs of such multiplexers were connected with a voice grade line, leased from AT&amp;T, and two <a href=http://www.historyofcomputercommunications.info/Book/1/1.1-BeginningsModemCompetition-CodexMilgo56-67.html>AT&amp;T 201 datasets</a> at 2400 bits/sec.
+There was no error control.
+These were deployed for a short while.
+We found the SCP12 too small and had located another machine, a <a href=https://en.wikipedia.org/wiki/Varian_Data_Machines>Varian Data Machines</a> model that used 16 bit words, and which could be expanded beyond 4K words.
+This machine, and its direct descendants, served as the Tymnet workhorse for the next several years.
+Howard Steadman equipped the machine with parallel I/O like the SPC12.
+We programmed this machine to do statistical multiplexing which took advantage of the fact that not all lines ran continuously.
+This allowed more users per leased line.
+We added backward error control on the multiplexed lines.
+<p>With this phase of Tymnet (not yet so named, however) pairs of <b>nodes</b> would be connected by a leased line.
+One node, the <b>base</b>, would sit next to the 940 computer, connected thereto by many cables.
+This still required the CTE equipment.
+The other node would typically sit in some Tymshare sales office.
+That office could access only that one 940 computer.
+
+<p>Several developments then began.
+Ann Hardy began to modify the 940 operating system to supplant most of the function of the local node, thus avoiding work both in the 940 host and in the 620 node.
+The 940 and 620 exchanged teletype traffic in a portion of 940 host memory to which the 620 had read-write access via hardware we had built.
+Laroy reprogramed the 620 to send and receive TTY traffic there.
+With this change the CTE equipment was retired and one cable connected the host to the Tymnet 620 base.
+<P>About this time the <a href=RemoteEcho.html>remote echo</a> issue bubbled to the top of the queue.
+<p>We also began to introduce forwarding logic in the nodes so that traffic could travel thru several nodes, each hop via another leased line.
+This required routing which was provided by static routing tables.
+A dial-up access port would reach the same host for weeks at a time, but at least we had much greater flexibility in allocating ports to hosts.
+Sales spent many painful meetings devoted to this allocation.
+<p>We had been thinking about dynamic routing tables to be built as new users logged in.
+We had no computer with enough power to do this in a brute force way.
+We could have put it on a Varian machine but that lacked sufficient core.
+We chose to program it for the 940 with a slightly modified version of the operating system.
+Laroy wrote that program using algorithms to dynamically sense the network topology.
+That first “Supervisor” knew several versions of the node software and the sizes and absolute addresses of routing tables in each of those versions.
+The supervisor would send out “data-grams” to cause the distributed nodes to change their routing tables.
+Several 940s (at least two) would simultaneously host supervisors who would politely agree among themselves which was to supervise the network.
+If such a supervisor or its host crashed, another supervisor would notice, discover the current net topology and assert control.
+This might take a few minutes, during which current sessions were unaffected but new users could not log in.
+Most days went by without such disturbances.
+<a href=../stories/TymBoot.html>I recall</a> bringing up the first supervisor.
+
+<p>One day in a marketing meeting, Virgil Swearingen suggested the name “Tymnet”.
+Few liked the name but it was clear that it was the best that had yet been suggested.
+It improved with time.
+<p>That was Tymnet I.
+It is described <a href=http://foldoc.org/TYMNET>here</a> too fairly well.
+<h3>Tymnet II</h3>
+The PDP-10 was arriving and it too was adapted by Bill Weiher to Tymnet so as to avoid the expensive “per-user” communications equipment from DEC.
+<p>Any programmer will tell you that one program knowing addresses in another is a very bad idea.
+It worked pretty well but did limit architectural progress.
+Laroy broached the idea that the supervisor would merely construct a <b>needle</b> which would pass thru the net guiding the creation of a new circuit.
+The needle would carry a 4 bit nibble, for each node, to steer the needle as it passed that node during the circuit construction.
+The supervisor would still need to know the network topology and how each node numbered each link.
+It would also know the node and link loads.
+It would no longer need to model the routing tables in each node.
+Routing table entries would be allocated locally.
+25 years later this pattern became the main notion behind <a href=http://www.ietf.org/rfc/rfc3031.txt>MPLS routing</a>.
+The cost of core memory for nodes had come down and the new node code was larger but more modular and efficient.
+At this time nodes typically had 8K or 12K of 16 bit words.
+A few had 16K.
+<p>One particularly nasty bug would strike the New Orleans node.
+Usually node bugs would have the civility to strike first, or eventually, near Cupertino.
+We loaded an extra core bank with the code for New Orleans and mailed it there in a shoe box.
+Upon the next crash they swapped core and mailed the core module with the crash state back to Cupertino.
+We found the bug.
+<p>When we opened the Paris office with its own 940 computer, there was consternation over the idea that the European network would be managed from the states.
+This consternation was largely overcome by rewriting a few manuals to describe the operation differently.
+The Paris 940 ran a supervisor so that when the trans-Atlantic link was out they would still be in service.
+Once when all of the American supervisors had gone down, (a very rare occurrence) the Paris node tried to take over the American network via a 2400 bit/sec link.
+It failed for by that time 2400 bit/sec did not suffice to control even a night load in the states.
+<h3>Tymnet Service</h3>
+Our timesharing computers attracted business now by those who found it convenient that their program and its data were accessible at a large number of geographical sites.
+Some customers, however, found our timesharing computers inadequate to their tasks, even with special pricing.
+There was increasing call, inside Tymshare and out, to make Tymnet serve hosts other than our own.
+We gradually did this.
+This required a considerable programming staff to work with owners of diverse hosts to connect those hosts to Tymnet.
+<a href=../Hardware/TNHC.html>Many techniques</a> were used.
+<p>This new business was easy to start because the simplest host interface mechanism was the early cable per connection configuration that required no changes to the host; just power, floor space and termination of a leased line to our site.
+The prospective customer had very little up-front cost to impede him.
+After the first day his computer would be accessible by a variety of terminal types from a variety of US cities and even several foreign countries.
+<a href=http://www.nlm.nih.gov/archive/20130423/bsd/history/sld014.htm>Here</a> is a memento from the NLM, and some <a href=http://www.nlm.nih.gov/bsd/historypresentation.html>perspective</a> from our first customer.
+Also see a <a href=http://archive.computerhistory.org/resources/text/Tymshare/tymshare.tymnet_passport.1984.102638885.pdf>contemporary directory</a> of institutions with computers connected to Tymnet.
+<p>All through this development new varieties of terminals were coming to market.
+They came with higher baud rates and peculiar timing requirements.
+We would teach Tymnet about these new terminals and the node near the terminal would take care of the peculiarities.
+Other users of these terminals would have to adapt their host software to accommodate these strange timing requirements.
+It gradually dawned on us that the adaptation of various hosts to various terminals was a strategic marketing advantage.
+<p>With the advent of Tymnet service the division began to become a company in its own right.
+After McDonnell Douglas bought Tymshare, and then sold it to EDS, Tymnet was sold to MCI or British Telecom who were busy merging.
+It is still running today.
+At its peak there were 6600 nodes in Tymnet, at nearly as many locations.
+<p>P.S. Don Johnson has been connected with Tymnet for many years.
+On Monday, March 24, 2003 he said: <blockquote>
+We shut down Tymnet at 11:48 AM PST this morning.</blockquote>
+<hr>
+Some <a href=TP.html>notes</a> on internal stream formats and link formatting.
+<br>The book “<a href=http://www.amazon.com/exec/obidos/ASIN/013165134X/qid=991195214/sr=1-18/ref=sc_b_18/107-1842468-8550128>Computer-Communication Network Design and Analysis</a>” by Mischa Schwartz has a great deal more technical information on Tymnet and other networks of the 70’s.
+<br>Recent <a href=http://parmasoft.com/>Tymnet information and good links</a>.
+<br><a href=http://parmasoft.com/index.asp>Tymnet Today</a>
+<br><a href=../stories/TymBoot.html>Tymnet II recollection</a></body>
+<br><a href=http://www.3106.net/3106.htm>Some more recent history</a>
+</html>

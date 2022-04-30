@@ -1,0 +1,22 @@
+When the CDC 6600 arrived in Livermore about 1964 we were already planning a timesharing system, inspired by <a href=http://www.multicians.org/thvv/7094.html>CTSS</a> and plans for Multics.
+There were two mechanisms on the market that might serve as ‘terminals’, the extant IBM Selectric and the new <a href=https://en.wikipedia.org/wiki/Teletype_Model_33>model 33 Teletype</a> from Western Electric.
+The Selectric was 12 c/s and included lower case.
+The Teletype was cheaper and in retrospect more rugged.
+We went with the Teletype which was perhaps the first ASCII terminal.
+<p>IBM had an expensive 7750 communications controller which had been adapted for use by CTSS to connect model 28 teletypes, but that was complex and arcane.
+It was unclear whether IBM was willing to let us use the CTSS adaptations and also we would have to do special engineering to connect it to the 6600.
+For the cost of that adaptation we decided we could connect the 6600 directly to the Teletypes.
+<p>Bob Wyman designed hardware to connect to the 6600 channel by which code in a CPU could sense current on any of 48 teletype lines, and also control the voltage on those same lines.
+An input command would read one word which was 12 status bits from 12 different TTY (teletype) lines—one bit per line.
+Another command would set voltages, high or low, for those same lines.
+A PPU (a small CPU among 10 similar CPUs that were standard on  the 6600) was devoted to monitoring these lines, converting the timed signals to ASCII characters, delivering them to the CPU for access by timeshared programs.
+It also performed the transmission of characters.
+<p>Wyman’s hardware did not do timing; to read 12 bits from 12 terminal lines was to get the status of those lines at the time you executed the command.
+The signal changed 110 times per second and it was necessary to read all the lines 550 time per second in order to detect the signal timing and gather the 100 bits/sec as they arrived.
+<p>There were no interrupts available in the PPU but there was a 12 bit clock that incremented each microsecond.
+A 5 instruction subroutine would read the clock and decide whether it was time to sample the input lines, or set new values into the output lines.
+This routine was called by call commands scattered thru out the code so as never to go more than about 1 ms without watching the clock.
+<p>In this code the bits of a character were collected into a one character buffer as they arrived.
+Four mask words, one for each group of 12 teletypes, remembered which lines were currently transmitting a character.
+About 10 times per second, all newly assembled characters were delivered, in a batch to the CPU.
+<p>I had heard of an earlier mini computer applied to TTY traffic at NSA that used a similar plan.

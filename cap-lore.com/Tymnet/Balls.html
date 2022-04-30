@@ -1,0 +1,27 @@
+<title>Tymnet Balls</title>
+Tymnet circuits carries 8 bit characters thru the net on a path fixed for a login session.
+There were several additional signals that travelled thru over the path mostly in their turn without queue jumping.
+They were mostly called ‘balls’ and identified by color.
+<p>Tymnet was originally designed to drive ‘start-stop’ dumb ASCII terminals which had no logic in themselves.
+The 110 b/sec model 33 Teletype was the first target.
+‘<b>TD</b>’ (terminal driver), referred to below, is the Tymnet component that stood between the Tymnet circuit and the dial-up phone line over which the ASCII terminals accessed Tymnet.
+<dl>
+<dt>Black<dd>Originated by a network node when data has been lost.
+This was rare.
+<dt>Grey<dd>The reflection of a black ball from a TD.
+Delivered to application.
+<dt>Orange<dd>Initiated by application in order to wait until previous printing at terminal had ceased.
+<dt>Yellow<dd>Reflection by TD of orange ball, delivered to application that was likely waiting for it.
+<dt>Zapper (not a ball)<dd>Tear down circuit.
+Issued at either end; delivered to kernel at application end.
+<dt>Gobbler<dd>Clear all buffered data ahead of signal.
+Sometimes issued by application.
+<dt>Escape<dd>Queue jumping signal from TD, initiated by terminal, to interrupt application that might, perchance, be looping.
+<dt>Red &amp; Green<dd>These balls concern full duplex dumb terminals and are described <a href=http://rogerdmoore.ca/PS/TYMNET/TY.html>here</a>; they are not relevant to DSR.
+</dl>
+<p>A <a href=http://rogerdmoore.ca/PS/TYMNET/TY.html>paper by Laroy</a> with real content!
+<br><a href=http://bitsavers.informatik.uni-stuttgart.de/bits/Foonly/F2/text/DSK:%3CFOONEX%3ETYMSRV.MAC;125.txt>Here</a> is some PDP-10 assembler code dealing with Tymnet logic.
+It seems to be the “TYMBASE interface handler” that Sumex, an early Tymnet customer, used to adapt their host to Tymnet.
+I do not recall that they asked for or received any code from Tymshare.
+<br><a href=http://mirror.bagelwood.com/textfiles/magazines/MODERNZ/modern21.dbb>Here</a> we learn of “Black Ball, Glass     
+    Ball, Gray Ball, Green Ball, Orange Ball, Red Ball” in some unidentified glossary.

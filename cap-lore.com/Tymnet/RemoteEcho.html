@@ -1,0 +1,15 @@
+<title>Remote Echoing</title>
+<h3>Remote Echoing</h3>
+This software statistical multiplexing was deployed from Palo Alto to Los Angeles.
+Very quickly it became apparent that the variable echo delays were very disturbing since the sound of the Teletype’s printer was the visceral signal that one had indeed pressed a key.
+While people were delighted that the most transmission errors had been eliminated, they found it difficult to type accurately.
+<p>We had anticipated that this might be a problem and already had a plan.
+The plan was difficult enough that we had not coded it before first deployment.
+We went all-out to code <b>remote echoing</b>.
+<p>The plan was to usually echo characters at the node (multiplexor) nearest the Teletype.
+The 940 system was prone to situations where the echoed character came from the application program and not the operating system—the application could request that characters not be echoed.
+The logical way of handling all of this is for the operating system to cease echoing characters until the application has had a chance to say “don’t echo” in response to the characters that have arrived but it has not had a chance to interpret.
+With this plan, however, people found it disconcerting that echoes would cease after each line when they already knew that more input would be read by the application.
+In these common situations the user would already type the next input, and want it to be immediately echoed.
+If one wanted echoing to be properly inhibited, he would have to wait until the application had reached the point of canceling OS generated echoes.
+The additional latency exacerbated this problem!
