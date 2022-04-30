@@ -1,0 +1,187 @@
+I) General configuration description
+
+     The TYMBASE is a Varian 620 mini-computer connected both to the 
+TYMSHARE network, and to our PDP-10.  The base is connected to the network
+via a 2400 baud line (and modem) to TYMSHARE in Cupertino; and to the PDP-10
+via a TYMSHARE memory interface through the MX-10 memory port multiplexor
+to port 3 of the memory bus.  The TYMBASE only has access to addresses 2000-
+2777, and so is only connected to the lowest memory box(es).  The hardware 
+communication path is then from port 3 of low memory, through the TYMSHARE
+interface hardware, to the 620, over the 2400 baud modem and line, and into
+Cupertino.  
+ 
+II) Base description
+
+     Housed in the TYMBASE cabinet, are a Varian 620 mini-computer, the
+memory interface hardware, and power supplies.  Situated next to the cabinet
+is the 2400 baud modem.  The power supplies are at the top of the cabinet
+and have one power switch and one circuit breaker.  Below the power supplies
+is the 620, followed by the memory interface.  Towards the lower left hand
+side of the cabinet are two memory interface control switches, one to 
+enable/disable the interface, and one to reset it.  When disabled, the 
+TYMBASE should not affect our memory operation.  At the bottom of the 
+cabinet is a patch panel and loud speaker which can be plugged into
+various positions in the panel and give useful debugging information (to
+those who know how to use it).
+
+III) Normal operating characteristics
+
+   1) Modem - should have a bunch of lights on.
+
+   2) 620 - RUN and OVL lights should be on, and the AC lights should be
+      lit brighter towards the right side, and pulsing slightly about once
+      a second when the TYMBASE is idle.  If the speaker is connected, it 
+      should be ticking about once a second when there is no traffic.
+
+   3) memory interface - should be enabled.
+
+   4) MX-10 - should have power.
+
+   5) memories - memory boxes containing addresses 2000-2777 should have
+      port 3 enabled.
+IV) Software description.
+
+     Inside the Varian 620 sits the TYMBASE communication code, which is 
+roughly divided into two parts, the network handler and the host handler.
+The network handler receives/transmits messages from/to the rest of the
+network, and in particular continues to act as an active node on the network,
+passing messages back and forth, even when we, the host, are down.  The 
+host handler receives/transmits messages and character data from/to the host,
+our PDP-10, and decides whether the host is up.  Communication between the 
+host handler and TENEX is accomplished via the shared memory page (2000-2777).
+In particular, there is a constant "handshaking" protocol that must be 
+observed to let TENEX and the TYMBASE know each other is up.  Every 400 msec
+TENEX sets a key word into location 2000 and every 500 msec the TYMBASE
+looks at location 2000 and clobbers the key if it was there.  If the key
+is not present when the TYMBASE looks at 2000, the TYMBASE assumes that 
+TENEX has crashed, and crashes sympathetically, depositing a word in loc 2013
+In fact, any time TYMBASE discovers a condition it cannot handle, it 
+deposits a non-zero word in loc 2013 (YBCRSH).
+     TENEX constantly updates the key location (2000) with the key every
+400 msec and expects the TYMBASE to clobber the key within 8 seconds.  If not,
+TENEX will give a TYMBASE overdue BUGCHK if the switches are set properly.
+TENEX also looks at the base crash word at 2013 (YBCRSH) every 15 msec, and
+if it is non-zero, will give a TYMBASE crash BUGCHK, again dependant on the
+switches.  The key setting/checking code is driven off the clock interrupt
+level, so if the PDP-10 clock channel drops, the TYMBASE will give the -10
+a missing host crash message in location 2013, and TENEX (at the next 
+scheduler run) should give a TYMBASE died BUGCHK.  The communications and
+TYMBASE crash checking code is driven off the scheduler, and should run
+even if the clock level isn't, as long as some user does not go into an
+infinited CPU loop.
+V) TYMBASE service
+
+     Software problems should go to our systems staff first, then to
+TYMSHARE's.  Hardware problems should go directly to TYMSHARE.  The following
+people are responsible for the following areas:
+
+   AREA      		PERSON				PHONE
+
+TENEX software		Michael Heathman		7-5208 (work)
+							854-0437 (home)
+							854-1908 (home)
+
+TYMBASE software	Syd Reid (TYMSHARE)		56-257-6550 (work)
+
+TYMBASE hardware	John Swarbrick (TYMSHARE)	56-257-6550 (work)
+
+TYMNET/SUMEX liason	Paul Brickey (TYMSHARE)		56-257-6550 (work)
+			(Salesman)
+
+SUMEX/TYMNET liason	Michael Heathman		(as above)
+
+     Additional, and helpful, numbers are:
+
+Network questions	TYMNET desk			56-257-6550
+
+Hardware questions	TYMNET operations		56-257-6550
+VI) TYMNET accounts
+
+     Besides the TYMNET account name/password indicating SUMEX, we have
+several other accounts in TYMNET for various purposes.  They are:
+
+   Account	Password	Machine		Purpose
+
+   SUMEX	TYMSUMEX	SUMEX		SUMEX user's account
+   SUMEXMAINT	STANFORD	SUMEX		SUMEX debugging account
+						(gets in over SHUT message)
+   SUMEXMAIL	TYMSUMEX	:24		to get latest TYMNET mail
+   TYMIIITST	TEMPORARY	:10		to test TYMNET response
+   SUMEXMSG	STANFORD	:10		to set SYSTEM UNAVAILABLE
+						message, and run other 
+						utilities
+
+VII) TYMSHARE network utility programs/files
+
+     There are a set of utility programs and files on various TYMSHARE 
+machines for our use in telling users our operating status, finding latest
+TYMSAT phone numbers, etc.  To use a program or list a file, log into the
+appropriate account, and give the program name or "TYP" followed by the 
+file name.  Type "EXI" when finished to logout.  These utilities are:
+
+   Account	Program/file			description
+
+   SUMEXMAIL	(TELCOMAIL)@xxxACCESS		file of latest TYMSAT phone
+		(where xxx is abbreviation	phone numbers
+		 for the current month)
+   SUMEXMAIL	(CSMAIL)@SCHEDULE		file of latest TYMSHARE
+						operating schedule
+   SUMEXMAIL	(DSMKMAIL)@NODES		latest list of TYMNET nodes
+						and telephone numbers indexed
+						by node
+   SUMEXMAIL	(DSMKMAIL)@STATE		same as @NODES, but indexed
+						by state
+   TYMIIITST	CHARTEST			program to test network
+						reliability
+   TYMIIITST	LOGTEST				program to test SUMEX network
+						logins
+   TYMIIITST	TIMETEST			program to test network 
+						response time
+   SUMEXMSG	TYMMSG				program to set SYSTEM 
+						UNAVAILABLE message
+   SUMEXMAIL	DSMKMAIL			Data Services Marketing
+						Mailbox. Mail to Paul Moore
+						and Syd Reis.
+VIII) TYMSRV MDDT switches
+     
+     There are several MDDT accessible switches in TENEX for controlling
+the operation of the TYMBASE/TENEX interface (TYMSRV).  They are:
+
+   SWITCH		VALUES		MEANING
+
+   TYMBUG		  0<		report all TYMSRV BUGCHK's
+			  0		report only fatal TYMSRV BUGCHK's
+			  >0		report no TYMSRV BUGCHK's
+
+   TYMENT		  0<		keep interface shut (allow only
+					SUMEXMAINT account logins)
+			  0		open or shut interface according
+					to ENTFLG (0=>shut, non 0=>open)
+			  >0		keep interface open
+Setting TYMNET down message:
+
+(dial TYMSAT and connect terminal)
+PLEASE LOG IN: sumexmsg;stanford;
+
+TYMSHARE C10 11/10/74  5:50
+-tymmsg
+
+TYMNET MESSAGE PROGRAM, VER. 3.00
+:enter					(or "help" or "clear")
+
+BUILDING CIRCUIT TO ACTIVE SUPERVISOR
+
+ENTER MESSAGE AND END WITH CONTROL D
+
+any message we want ^D
+
+BUILDING CIRCUIT TO DORMANT SUPERVISOR SYSTEM n
+
+(builds circuits to other supervisors as well, though may
+not be able to get through to some.)
+
+:quit
+
+-exi
+
+(hang up)
