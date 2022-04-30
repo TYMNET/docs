@@ -1,0 +1,204 @@
+                    TYMNET DATA COMMUNICATIONS NETWORK
+
+Modified on Wednesday August 16, 1978
+
+
+I.   GENERAL INFO
+     Honeywell subscribes to the communications service offered by TYMNET
+     Corp. that allows dialing a local number in most major cities in the
+     U.S., as well as some overseas locations, and by giving the proper
+     id and password, being connected to the Multics system in Phoenix.
+     While there is an hourly charge for this communications network ser-
+     vice, it is usually less costly than either dialing direct or using
+     HVN.
+
+II.  TERMINAL TYPES
+
+    Only 300 and 134.5 baud lines are available on Multics for access
+    through the TYMNET network.
+
+    1.TYMNET supports a wide variety of terminal types. Each terminal type
+      has an identifying character which _m_u_s_t be sent to TYMNET when you
+      first log in to establish the transmission characteristics of the
+      terminal.
+
+
+
+    TERMINAL IDENTIFIERS ARE:
+
+IDENTIFIER         CODE           SPEED            TERMINAL TYPE
+======================================================================
+    a             ASCII       30cps, 120cps        a)CRT's with no line
+                                                     feed or CR delay,
+                                                   b)terminals with buffers.
+    b             ASCII           15cps            all terminals.
+    c             ASCII           30cps            impact printers.
+    d             ASCII           10cps            all terminals.
+    e             ASCII           30cps            thermal printers.
+    f             ASCII       15cps input          (BETA)
+    g             ASCII       30cps, 120cps        belt printers (GE
+                                                   Terminet)
+    i             ASCII       30cps, 120cps        matrix printers.
+    p CR          EBCD/           14.8cps          (2741).
+                Correspondence
+
+III. LOGGING IN TO TYMNET
+
+    1. Turn on the terminal and coupler.
+
+    2. If the terminal has adjustable data transmission speeds, set the
+       terminal to 30 cps. This is to handle TYMNET's initial message.
+       Lower settings give a garbled message during login.
+
+    3. If you are using a terminal that has an Auto Linefeed switch
+       (such as the TermiNet 300), turn it off during the initial login
+       procedure with TYMNET. Once you have made contact with Multics
+       you may turn it back on.
+
+    4. Dial the TYMNET phone number and wait for the high-pitched tone.
+       (If the tone sounds weak or raspy, hang up and re-dial to obtain
+       a better line).
+
+    5. Place the telephone handset in the coupler or depress the "DATA"
+       button if using a 103A or 113A dataset.
+
+    6. The following message will be sent to your terminal at 10 cps:
+       PLEASE TYPE YOUR TERMINAL IDENTIFIER
+
+    7. Set your terminal to the desired speed (if necessary), and type
+       your terminal identifying character according to the table above.
+
+    8. TYMNET will then send:
+       -XXXX-YY--
+       PLEASE LOG IN:
+       where: XXXX is the remote access node number,
+       and YY is the port on the node to which your terminal is connected.
+
+    9. (OPTIONAL) You may check for the presence of the network supervisor
+       (which controls the Tymsat you have called) by typing a single CR.
+       If the supervisor is in control, the following prompt will appear:
+       USER NAME:
+
+   10. You may need the following control characters _b_e_f_o_r_e entering your
+       user name:
+                a) control-H    notifies TYMNET not to echo characters
+                b) control-X   to be used if you plan to input data from
+                               paper tape, cassette tape, or any other
+                               non-keyboard device. TYMNET must be able to
+                               start and stop data entry.For this,
+                               control-Q starts the device and control-S
+                               stops the device.
+                c) control-P   to be used if your terminal can only accept
+                               even parity.
+
+   11. After receiving "PLEASE LOG IN:" or "USER NAME:" enter your
+       TYMNET user id (preceded by control characters if necessary).
+       followed by a CR. (user id may be in upper OR lower case).
+
+   12. TYMNET will then prompt you for your password:
+       PASSWORD:
+
+   13. Respond by typing your password(in upper or lower case), followed by a CR.
+       N_O_T_E_: If you want to eliminate the prompt "PASSWORD:", enter your
+             TYMNET user id, a semi-colon(;), and the password followed
+             by a CR.(THIS MAY NOT WORK FOR NON-ASCII TERMINALS)
+
+   14. You should then receive either a semi-colon(;) or the following:
+       P nn (which indicates the port number of the TYCOM connected to Multics)
+       HOST IS ONLINE
+
+   15. From here on, the login procedure is exactly as if you were dialing
+       directly into Multics.
+
+   16. When you logout from Multics, TYMNET will respond:
+       CP DISCONNECTS  DROPPED BY HOST SYSTEM
+       PLEASE LOGIN: (at this point you may hang up the phone)
+
+
+IV. TYMNET Problem Responses
+
+
+    1. ALL PORTS BUSY        All available Multics TYMNET ports are in use
+                             at the transmission speed you have requested.
+                             Try again later or try another transmission
+                             speed.
+
+    2. BUSY TONE             If received when dialing the TYMNET network,
+                             wait a few minutes and try again. If the busy
+                             tone persists, call your local telephone repair
+                             service to check if the local lines are truly
+                             busy or out of service. If lines are continously
+                             busy, but not out of service, notify the Multics
+                             Computer Center.
+
+     3. HOST DOWN            Indicates the Multics system is not in operation.
+                             Wait and try later or contact the Multics
+                             Computer Center.
+
+    4. SYSTEM ERROR ON PORTn System is operational but a specific port
+                             or channel is not answering. Notify the Multics
+                             Computer Center.
+
+    5. HOST NOT AVAILABLE THROUGH NET
+                             1)The TYMCOM is down, or 2)invalid host requested,
+                             or 3)a new supervisor is taking over the net and
+                             has not picked up the host yet.
+
+    6. HOST NOT RESPONDING   The link between the TYMCOM and the host is
+                             temporarily lost. Try again in a few minutes.
+
+    7. To report trouble call the Multics Computer Center - (602)249-7567
+        or HVN  341-7567.
+
+V. Assignment of TYMNET user id's and passwords
+    contact:
+            Lacy Johnson
+            Honeywell LISD
+            Multics Computer Center
+            Box 6000 Mail Station K40
+            Phoenix, AZ 85005
+    phone: (602)249-7303   HVN 341-7303
+
+
+VI. LOCAL LINES
+
+   Do a "help TYMNET_lines" to obtain a list of TYMNET dial-up
+   lines in the major cities serviced by TYMNET.
+
+
+VII. COST
+
+   TYMNET charges $7.50 per connect hour which will be passed on to
+   the appropriate cost center.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved
