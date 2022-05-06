@@ -1,0 +1,371 @@
+IOCOMM.DAT - March 13, 1987
+
+
+Asynchronous Communications & Interrupts
+
+DESCRIPTION
+
+At this level, the driver interfaces directly to the IBM PC comm
+hardware, sending data from a transmit queue, and receiving data
+into a circular buffer. All of this is interrupt driven via the
+comm interrupt, and is written in assembler to allow for the
+greatest possible speed.
+
+The original X.PC driver made use of this interrupt to do its link
+level processing, as well as a good portion of it's packet level
+processing. The 4.00 driver uses this interrupt only for it's
+minimum necessary processing, which results in higher performance
+and less risk of interrupt conflict.
+
+
+Incoming characters - are placed in a circular buffer of fixed size
+as soon as they are received. Should the buffer become full, the
+read pointer will "wrap", causing all the data in the buffer to be
+lost. In packet mode, the loss of characters is merely an
+annoyance, as the packets will be retransmitted anyway. In
+character mode, XON/XOFF pacing may be required to avoid loss of
+characters, especially at higher baud rates. XON/XOFF pacing (to
+the host) is prompted by the character mode Link level when it
+detects that the receive buffer is over 3/4 full. It is terminated
+by one of two things:  1) The Link detects that the receive buffer
+is less than 1/4 full. 2) The user application issues a Set Port
+Parameters command with xonxoff disabled. (The latter is an
+addition to the original driver specification.)
+
+Outgoing characters - are taken from a set of pointers to buflet
+chains and corresponding lengths. There is also a corresponding
+flag, which is used in packet mode to determine if the buflet chain
+should be freed when it is finished transmitting. As the lead
+buflet list becomes empty, the pointers are shifted up and the last
+pointer (and flag) is set to the original first pointer (and flag),
+with the length set to zero. When all buffer lengths are 0, the
+transmitter stops and must be restarted again by Link by calling
+enable_xmt(). The Link level is responsible for setting these
+pointers, lengths, and flags, with interrupts OFF. In character
+mode, it will free each buflet chain when it reuses it's slot. In
+packet mode, it will only free a buflet chain when it reuses the
+slot AND the flag is set to TRUE. Also see XMTBUF.DAT.
+
+Modem status - will be read into a storage location. It is Link's
+job to check this and act based upon them.
+
+Breaks and async errors - will be duly noted and counted. Action
+taken by these is the responsibility of the Link level.
+
+
+Functions used at communications interrupt time
+===============================================
+
+comm_interrupt:
+
+  save registers
+  while there is another interrupt
+     get interrupt type
+     If interrupt is TRANSMIT
+         call xmit_one_char
+     else if interrupt is RECEIVE
+         get input character
+         if xonxoff pacing is on
+             if char is XOFF
+                 Set xoff received
+                 turn off transmitter
+             else if the char is an XON
+                 clear xoff received
+         else
+             *wrtrecvbuf <-- input char
+             increment wrtrecvbuf
+             If wrtrecvbuf is greater than endrecvbuf
+                 wrtrecvbuf <-- begrecvbuf
+     else if interrupt is LINE STATUS
+         read linestatus
+         extract error type
+         increment linkstats[] for that type
+         if type is BREAK
+             set breakrecvd TRUE
+         else
+             set errorrecvd TRUE
+     else if interrupt is MODEM STATUS
+         mdm_status
+  clear programmable interrupt controller
+  restore registers
+  return
+
+
+xmit_one_char:
+
+  clear xmt_intcnt (# of timer ticks since last call to here)
+  If xmtxoff is not NO_PACE_OUT
+      If xmtxoff is SEND_STARTPACE
+          transmit an XOFF character
+          xmtxoff <-- SENT_STARTPACE
+          return
+      If xmtxoff is SEND_ENDPACE
+          transmit an XON character
+          xmtxoff <-- NO_PACE_OUT
+          return
+  If xoff received is TRUE
+      Disable transmit (by setting xmtactive to FALSE)
+      return
+  If checking for CTS and CTS is not set
+      Disable transmit
+      return
+  If xmtlen[0] is zero
+      If xmtlen[1] is zero
+          Disable transmit
+          return
+      Else
+          ptmp <-- xmtptr[0]
+          ftmp <-- xmtflg[0]
+          for all xmtptr[I] where I > 1:
+              xmtptr[I - 1] <-- xmtptr[I]
+              xmtlen[I - 1] <-- xmtlen[I]
+              xmtflg[I - 1] <-- xmtflg[I]
+          xmtptr[last xmtptr] <-- ptmp
+          xmtlen[last xmtptr] <-- 0
+          xmtflg[last xmtptr] <-- ftmp
+          xmtbufptr <-- xmtptr[0]
+          left in buflet <-- Number of data bytes in each buflet
+          current transmit pointer <-- xmtptr[0]->bufdata
+  if left in buflet is 0
+      xmtbufptr <-- xmtbufptr->bufnext
+      current transmit pointer <-- xmtbufptr->bufdata
+      left in buflet <-- Number of data bytes in each buflet
+  transmit character pointed to by current transmit pointer
+  increment current transmit pointer
+  decrement left in buflet
+  decrement xmtlen[0]
+  return
+
+
+mdm_status:
+
+  read modem status register
+  store into mdmstatus
+
+
+Functions used by Link and the Driver Interface
+===============================================
+
+enable_comm:
+
+  If commenabled
+      return ALREADY ENABLED
+  wrtrecvbuf <-- readrecvbuf <-- begrecvbuf
+  fill xmtptr[] with NULLs
+  fill xmtlen[] with 0s
+  clear breakrecvd, errorrecvd, and all linestats
+  set xmtactive to NO
+  set xmtxoff to NO_PACE_OUT
+  clear out link statistics
+  read modem and line status
+  save old interrupt vector
+  comm interrupt vector for active port <-- &comm_interrupt()
+  save old modem control and interrupt enable registers
+  save PIC register
+  enable receive, status, error ints in Interrupt Enable Register
+  set OUT2
+  enable comm interrupts in 8289 (PIC)
+  set commenabled to TRUE
+
+
+clear_comm:
+
+  wrtrecvbuf <-- readrecvbuf <-- begrecvbuf
+  fill xmtptr[] with NULLs
+  fill xmtlen[] with 0s
+
+
+disable comm:
+
+  If commenabled is NO
+      return
+  disable comm interrupts in 8289
+  reset OUT2
+  disable all interrupts in Interrupt Enable Register
+  restore comm interrupt vector
+  restore old IER and old MCR and old PIC
+  set commenabled and xmtactive to NO
+
+enable xmt:
+
+  If xmtactive and # ticks since last xmt interrupt is less than
+      a specified maximum (xmt_intcnt < MAX_XMT_INTCNT)
+         return ALREADY ACTIVE
+  If commenabled is NO
+      return COMM PORT NOT ENABLED
+  xmtactive <-- YES
+  disable interrupts
+  enable transmit interrupt in Interrupt Enable Register
+  enable interrupts
+  return
+
+stop_xmt:
+
+  Disable transmit interrupt in Interrupt Enable Register
+  xmtactive <-- NO
+  return
+
+comm_status:
+
+  read modem status register into mdmstatus
+  return mdmstatus masked with specified mask
+
+set_break:
+
+  set break flag in line control register
+
+
+reset_break:
+
+  clear break flag in line control register
+
+
+set_modem_ctrl:
+
+  read modem control register
+  OR it with passed value
+  write modem control register
+
+
+reset_modem_ctrl:
+
+  read modem control register
+  AND it with Ones complement of passed value
+  write modem control register
+
+
+set_port:
+
+  commport <-- port base address(portaddr)
+  Disable interrupts
+  set baudrate for commport to baud in PPS
+  set parity, stopbits, and databits for commport to values in PPS
+  Enable interrupts
+  return
+
+
+init_comm:
+
+  allocate space for receive buffer
+  begrecvbuf <-- allocated area
+  endrecvbuf <-- begrecvbuf + SIZ_RECV_BUF - 1
+  set comm_enabled to false
+
+
+Timer interrupt processing:
+
+The IBM PC and compatible machines have two timer interrupt vectors
+for their basic timers. These are vector 0x1C, and vector 0x8.
+Vector 0x8 is the interrupt vector called by the hardware when the
+timer circuitry decides to issue a clock tick (18.2 times per
+second). This vector normally enters the ROM BIOS and does basic
+clock handling, after which the BIOS issues the user timer vector,
+0x1C.
+
+Because many programs make use of the 0x1C timer vector without
+properly chaining to whichever vector was previously using it, the
+current X.PC driver uses the 0x8 vector for it's timer interrupt
+handling. This is different from earlier versions of the driver,
+and could potentially cause conflicts with comm programs which
+change this vector after a device reset (they should not be doing Šthis). We have added a parameter (-T) which will initialize the
+vector at load time instead of at Device Reset time, which should
+allow the driver to work with any program which chains on the 0x8
+vector.
+
+
+Interrupt processing proceedure:
+
+Upon starting an interrupt, timer1_int() is called, with
+a stack looking like this:  (All stacks are shown bottom to top)
+
+  Flags (from interrupt)
+  Return address (from interrupt)
+
+
+timer1_int(), assuming X.PC timers are active, jumps to the
+old INT 0x8 vector leaving the stack looking like this:
+
+  Flags (from interrupt)
+  Return address (from interrupt)
+  Flags
+  Address of timer2_int()
+
+
+The old 0x8 routine does whatever it needs to do, this includes
+doing the 8259 EOI after calling 0x1C routine. (This is a feature
+of the IBM BIOS and compatibles.) When finished, it does an IRET
+that goes to our timer2_int() routine because of the stack
+manipulation in timer1_int(). The stack is left as it was upon the
+start of the interrupt:
+
+  Flags (from interrupt)
+  Return address (from interrupt)
+
+
+timer2_int() pushes all the registers on the stack and calls
+dec_sixths(). If it was doing link processing already (a definate
+possibility) it simply gets the registers off the stack and
+returns. Otherwise, it saves the stack pointer and changes it to a
+local stack area reserved for X.PC timer and link processing. Then
+it enables interrupts and calls do_timers() followed by do_link().
+When they are finished, it restores the stack pointers, the
+registers, and returns.
+
+
+
+Functions:
+
+
+enable_time:
+
+ - Initialize timer interrupt handler
+
+  Save existing INT 0x8 service routine address
+  Put the address of timer1_int() in INT 0x8
+
+
+
+timer1_int:
+
+ - Timer interrupt initial handler
+
+  If X.PC timer interrupts are active
+      Push Flags
+      Push address of timer2_int (CS first, then IP)
+  Far Jump to old (saved) INT 0x8 service routine
+
+
+
+timer2_int:
+
+ - Timer interrupt main handler
+
+  (NOTE - At this point, all interrupts are enabled due to BIOS)
+
+  CLI (disable interrupts)
+  push all registers save for SS, SP
+  Set DS and ES to the X.PC Driver's data segment
+  do the 1/6 second decrement code (call _dec_sixths)
+  if already doing our service routine
+      Restore registers from stack
+      STI (Enable interrupts)
+      IRET
+  else
+      Switch to our local timer interrupt stack, saving SS and SP
+      STI (Enable interrupts)
+      Do X.PC timer handling (Call _do_timers)
+      Do X.PC link level processing (Call _do_link)
+      CLI (Disable interrupts)
+      Restore stack (SS & SP)
+      Restore registers from stack
+      STI (Enable interrupts)
+      IRET
+
+
+
+disable_time:
+
+ - Clear timer interrupts and restore old vector
+
+  Put old (saved) INT 0x8 vector into INT 0x8
+

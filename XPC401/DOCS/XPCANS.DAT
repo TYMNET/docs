@@ -1,0 +1,1494 @@
+XPCANS.DAT-March 13, 1987
+
+NOTE: THIS HAS NOT BEEN EDITED TO REMOVE/UPDATE THE WRONG ANSWERS
+MOST OF THIS IS ACCURATE, BUT DOUBLE CHECK THE ANSWERS WITH OTHER
+DOCS OR THE CODE ITSELF.
+
+MSG#:I93889
+ IN#:  48
+ TO: KCI
+FROM: NTD      P/DRISCOLL
+SENT: 16 FEB 87 22:22:58
+READ: 18 FEB 87 08:48:36
+ CC: KCI  NSMS.S/KIM  NTD.L/MAURER  NTD.B/CARHART  NTD.J/ERICSON
+     NTD.P/DRISCOLL  NSMS.B/FULTZ  QSATS.E/MOORING  QSATS.M/ARNETT
+
+SUBJ: Answers
+
+1) yellow/orange ball logic
+
+PAD Protocol Spec has contradictions in its description on pgs.
+5,6 & 20. Conflicts on whether yellow ball is originated by only
+DCE, or by either side; whether orange ball is returned when data
+has been received over link or has been read by application; or
+whether orange ball is returned at the time the yellow ball is
+received.
+
+Existing driver returns orange ball whenever it gets a yellow
+ball. Existing driver also can loose data on Session Clear after
+sending orange ball.
+
+ Yellow balls can originate at either DTE or DCE. Orange ball
+ should be returned after application has read queued data.
+
+2) Is yellow/orange ball used for checkpointing? Current driver
+sends yellow ball when set-update is called for checkpointing,
+and then does set update when orange ball received.
+
+Driver spec-p. 28-Checkpoint-says event has occurred when
+all data has been received by the remote computer. Upon
+checkpoint request, should we send yellow ball (even at DTE), and
+then follow same logic as above; when all data has been read by
+the application, an orange ball is returned?
+
+ Yellow/ball logic is used for checkpointing. At Checkpoint a
+ yellow ball should be sent, following the logic noted in
+ question 2, i.e. set update when orange ball is received.
+
+ MCI PAD does not implement YB/OB logic, so attempts to use
+ event code '3' (Checkpoint) with MCI PAD should result in a
+ status code '23', illegal event code.
+
+3) Tymnet Echo Mode-PAD Processing Spec, p. 4, says in #1 that
+a red ball is sent if a red ball is outstanding and a character
+is received from application. Is this true-send a red ball with
+every character? Or once a red ball has been sent, do we just
+continute to send data until we either get the red ball back (go
+into a no-ball-out mode), or get a Forwarding time-out or
+character, and then precede the data with another red ball?
+
+ A red ball is not sent with every data character,  Once a
+ red ball has been sent an 8-second timer is started to
+ resend the red-ball in case it gets lost.  Note a state
+ transition is missing, see answer to question 18.
+
+4) Tymnet Echo Mode-PAD Processing Spec p. 18-Enable Echo:
+How does enable echo take you to local echo mode from deferred
+echo mode? Not in state tables.
+
+ Enable echo does not directly take you to local echo mode.  The
+ green ball/red ball logic gets you into local echo mode once
+ echo has been enabled.
+
+5) Tymnet Echo Mode-No activity timeout-stated to be no DTE
+input. Does this mean nothing being transmitted from DCE? Or no
+application activity? p. 13 & p.15, #2, for HOST outputting to
+DTE, should it not be DCE to DTE buffer?
+
+ This refers to input from the application only.
+
+6) Enable Permanent Echo-PAD Spec, p. 6-says yellow
+ball/orange ball logic ignored when in this mode. This conflicts
+with state diagram p. 26, where yellow ball/orange ball are
+always normal in data transfer mode. Yellow ball/orange ball
+should always be enabled.
+
+ State diagram is wrong. MCI ('Permanent Echo') will never
+ originate yellow/orange balls.
+
+7) Disable Permanent Echo-PAD Spec. p. 6-says red ball is
+generated to negotiate local echo-what does red ball have to do
+with Disable Permanent Echo (MCI function)?
+
+ This should refer to Disable Echo Control, not Disable
+ Permanent Echo. Has nothing to do with MCI.
+
+8) Tymnet Echo-Is forward character used for both deferred echo
+mode and local echo? And forwarding timeout is also in both
+deferred echo and local echo? Does forwarding timeout default to
+a 1/6 second timeout?
+
+ Forwarding character and timeout apply in either deferred
+ or local echo mode.  1/6 second timeout is the default.
+
+9) Channel state: reset received or sent
+
+Driver Interface Spec, p. 36, and p. 50 #10 what happens when
+reset is received? If channel, (and channel being 1-15)?, is not
+disconnected, does it get put into state 'reset sent or
+received', and then when Read-Channel-Status is received, it
+returns to previous state?
+
+What are implications of a reset to channel 0? If reset is sent
+by DTE, is this because of out-of-sequence numbers? And does this
+then also change channel state to reset received or sent?
+
+ See answer to question 27.
+
+10) In the PAD State Diagram, Session Clearing, page 27, the
+states for Session Clear and Session Clear Accept packets when
+received in DTE Session Clear state (s6) have been changed from
+s1 to s7. s7 is considered to be the idle state; s1 is considered
+to be DTE Pending Call state.
+
+ S7 is a transient state and should not be considered the
+ idle state.
+
+11) For session collision, the DTE/DCE behavior differs. The
+session request originated on the DCE is ignored; the session
+originated on the DTE is processed normally. This follows ISO
+document.
+
+ DTE/DCE behaviour is different for session collision, the
+ DTE session is processed normally, as per ISO.
+
+12) For clear collision, the DTE/DCE behaviour is identical. Once
+a terminal has issued a Send Session Clear and is waiting for a
+Session Clear Confirm, but instead received a Session Clear, the
+terminal is put into the idle state, where the Session Clear
+Confirm, if received, is discarded.
+
+ DTE/DCE behaviour is identical for session clear
+ collision.
+
+13) Tymnet Echo Mode State Diagram was changed as per
+conversation with S. Kim on 9/24.
+
+ See question 18
+
+14) The Session Clear Result codes are inconsistant between the
+X.PC Driver Interface specification, and the X.PC PAD Interface
+specification. Why is this? Is a remapping involved (in which
+case some codes must be added in the Driver Interface spec.)?
+
+ New codes were provided to resolve inconsistency.
+
+15) Re Network Software Report (NSR) #466 and NSR #599: Should we
+send Reset Confirmation upon receipt of ANY Reset Request,
+regardless of LCI or state? Has this issue been resolved?
+
+ A RESET confirmation should be sent upon receipt of any
+ RESET request, regardless of LCI or state. (see #
+
+16) Re NSR #527: Should we NOT send red balls when in RNR (to
+DCE) state? Is there any other similar packet? (For example,
+Reset Request?)
+
+ Red and other balls should still be sent even if the driver has
+ flow controlled the remote DXE.
+
+17) Which brings up another point... Should Reset Request end an
+RNR state? The necessary sequence numbers appear to be impossible
+to obtain otherwise... (I think we could use a really good
+description of reset packets, their purpose in life, and what
+they accomplish...)
+
+ RESET request does end RNR state. See question 59 for more on
+ reset packets.
+
+18) Re NSR #838: A 25ms Green Ball timeout is impossible to
+achieve given the present IBM hardware. The closest possible time
+out to this would be approximately 55ms, and this would require
+special handling. The minimum timer not requiring special
+handling would be approx 165ms. If we are to need the smallest
+(ie., 55ms) time out for this function, we should know ASAP so we
+can modify our timer logic before it is frozen.
+
+ 165 milliseconds is acceptable for the short green ball
+ timeout.  Note that there is a transition missing between T3
+ and T2.  In T3, the short timeout is started in no data is
+ available from the application.  If the timeout expires with no
+ further data, then a green ball is sent and the state changes
+ to T2. If data is available from the application, the state
+ remains T3 until no further data is available, at which point
+ the short timeout starts, or a red ball or disale echo control
+ is received.
+
+19) The Driver Interface Spec has a new function: Link
+Statistics. While this is not a problem to implement, it *does*
+have 6 parameters, whereas all other functions as well as the
+parameter block itself, are limited to four parameters. Should we
+increase the number of parameters allowable, and change the
+parameter block specification, or should we change the link
+statistics function to return an array of 6 integers to a user
+specified buffer (ie., only one parameter)? The former increases
+overhead for each function call, whereas the latter adds no extra
+overhead.
+
+ Though documented, the vector #30 calling for the statistics is
+ not implemented. Vector 30 is flush input data and vector 31 is
+ flush output data.
+
+20) How does a DCE find out whether the DTE is MCI (or any other
+non-Tymnet) pad compatable? I.e. are they using version 2.01 or
+3.01?
+
+ DCE doesn't find out.  DCE commands pad to be in one mode or
+ the other.  There is no way to differentiate between the two
+ versions of code.
+
+21) On Clear Device should we send resets on all channels, only
+active channels or on none of the channels.
+
+ No, send RESTART.
+
+22) The Device Reset function description indicates that XON/XOFF
+should default to on after reset this conflicts with the Set Port
+Parmeters description which says it should default to off. Which
+is it?
+
+ The net result after initialization is on. Use this as the
+ default.
+
+23) Tyment Echo / MCI Echo Mode
+
+What is the correlation between Enable Echo Control / Enable
+Permanet Echo packets and enable local echo PAD parameter (page
+29 of Driver Interface Spec)? Does one override the other? For
+example, if PAD parameter has enable local echo = 0, do we accept
+neither Tymnet or MCI enable echo packets, and if enable local
+echo = 1, do we accept only Tymnet enable echo packet? If we do
+not accept these packets, is it an error condition (rather than
+discard the packets?)
+
+Or, do we honor the Tymnet or MCI enable echo packet, and ignore
+enable local echo PAD parameter? Or, if in Tymnet Echo mode, and
+enable local echo PAD parameter = 0, do we remain in deferred
+echo mode without requesting to go into local echo mode? And same
+with enable local edit parameter. What is the correlation between
+this and the Enable Local Edit packet?
+
+ Still looking into this one.
+
+24. Tymnet Echo Mode: If forward character is carriage-return,
+and convert carriage-return to newline PAD parameter is set, we
+will forward data. Assume that is convert newline to
+carriage-return flag is set, and the application sends a newline,
+we will not forward data.
+
+ Assumptions are correct.
+
+25. Tymnet Echo Mode: For local echo mode, what exactly does
+DCE->DXE transmit mean? (If get a character from the application,
+and DCE->DXE transmit, we go into deferred echo mode).
+
+ Echoing applies only to data received from the application.
+ I'm not sure what DCE->DXE transmit means.
+
+26. If our buffer pool should become empty, we have outlined
+clean error recovery for all possible situations, except one, and
+we are not sure what to do because of any implications on
+existing application software. The one situation is a Send
+Session Clear application request. If there is not a buffer to
+generate a session clear packet, do we simply return to the
+application, and possibly change the channel state?
+
+Or, should we start a timer which will then generate the control
+packet when a buffer becomes available, and then return to the
+application? before we return to the application?
+
+ I'd suggest you note that a session clear was requested and
+ somehow when buffer resources become availabe, retrieve the
+ necessary buffers and carry out the session clear procedure.
+
+27. Depending on definition of reset (currently takes channel out
+of current state temporarily into reset state, and will then
+return to current state upon Read Channel Status), do we still
+send a reset on all channels for a Clear Device application
+function request?
+
+ No, do not send RESET on all channels, send RESTART (see
+ question 56)
+
+28. Do we have to worry about nested application function calls -
+could get VERY messy. For example, could a background proccess be
+running off of a timer and then consequently interrupt current
+processing of application requests to issue another one?
+
+The same with the set interrupt function-if an event timer is
+set, could the application interrupt service routine make an
+application function call?
+
+We would like to put a software lock at the beginning of our
+driver interface module such that we would make an immediate
+return to an application function call which was made while
+another application function request is being processed.
+
+ No. Software lock is acceptable.
+
+29. Can we add other error status codes?
+
+ No.
+
+30. Is forward character used even if neither Tymnet nor MCI echo
+mode is active?
+
+ Yes
+
+31. Is forward timeout used even if neither Tymnet nor MCI echo
+mode is active?
+
+ Yes
+
+32. When session is cleared by application, and the working
+transmit data buffer has data in it which has not been linked to
+the Outgoing Queue (flow control will be on), should we make sure
+that the buffer gets linked and sent out, or should we flush the
+data?
+
+ The application should wait for outgoing data to be sent before
+ clearing the session, so flushing the data if the report i/o
+ status indicates queued data is acceptable.
+
+33. Is the following assumption correct-If forwarding timeout
+is zero, all characters received during a single Output Data
+application request will be buffered together and then linked to
+the transmit outgoing queue before return is made to the
+application.
+
+If forwarding timeout is not zero, the buffer is not linked to
+the transmit outgoing queue before return is made to the
+application, but will be linked when the forwarding timeout
+occurs.
+
+ If forwarding timeout is zero, all characters received during a
+ single output data request can be buffered together and linked
+ to the transmit outgoing queue before a return is made to the
+ application.
+
+
+34. For set update and set interrupt, event = modem status
+change, the Driver Interface Spec. talks about changing the
+address, and only one modem address per channel-this relates to
+set update function only. (Set interrupt would not change
+address, but would execute it). Like the timer (only 1 timer per
+channel), and checkpoint (only 1 checkpoint per channel), is the
+modem event also only one modem event per device?
+
+ The "only address" qualifier for the function call means only
+ that but one address (16-bit word) will be vectored to upon a
+ modem status change interrupt. The application is allowed to
+ modify the vector.
+
+
+35. We are adding two additional application function requests.
+The first is a combined Report Input/Output Status and Read
+Channel Status. The second is a Get Diagnostics, which will
+return current states, etc.
+
+ No problem with adding the functions noted.
+
+
+36. In the Pad Protocol Spec., page 7, Set Forwarding Timeout
+function, it says that the length of the timeout is a single byte
+referring to 1/60ths of a second. Is this accurate, or is it
+really 1/6ths?
+
+ The current Driver code implements the value received exactly
+ "as is," from the trailer data-byte-1 position. So currently
+ the value is in units of 1/6 second. The duration begins in a
+ measured 1/18th second interval, however. This means duration's
+ average "slop" is 1/2 * 1/18 and not 1/2 * 1/6 second.
+
+37. Upon receiving a Restart request, Channel zero state becomes
+call cleared with a call clearing code of Packet Level Restart.
+What happens to the other channels? Are they also set to call
+cleared? If so, then what call clearing code? (According to spec,
+#11-#14 are channel zero only...) If not, then are they set to
+Disconnected?
+
+ If a channel was in connected state, the state changes to call
+ cleared with a clearing cause indicating packet level restart.
+
+38. Is a channel put into Reset Received or Sent state only when
+a reset is received while the channel is in connected state (i.e.
+data xfer mode, not during session establishment and clearing).
+If so, when the channel returns to its previous state after a
+read channel status request, it will always return to connected
+state.
+
+ See answer to question 59. Assuming that the session is clear,
+ a channel is put into disconnected state when a RESET is
+ received or sent.
+
+39. If a channel is in Reset state, does the reset cause code get
+passed to the application on a read channel state request?
+
+ The RESET cause code does get passed to the application on a
+ read channel status.
+
+40. Are any of the following function requests valid when a
+channel is in reset state, or should an error be returned? report
+i/o status, input data, output data send session clear
+
+ The function requests noted, report i/o status, input data,
+ output data, send session clear, are valid function requests in
+ RESET state and no error code should be returned.
+
+41. Combined Report I/O Status & Read Channel Status Function
+only makes sense when channel is in reset state; therefore, the
+application is able to know reset status along with i/o status
+information. Is this function still to be added?
+
+ Unless there's some other reason, of which I'm unaware, I don't
+ see a strong need to combined these two functions together.
+
+42. The Driver Interface Spec states that for an Output Data
+request, the Driver returns to the user the no. of bytes written,
+which may be any value from 0 up through the number of bytes
+requested. There is also an error diagnostic to be returned to
+the Application which says write attempted when flow controlled.
+Does this mean that during an Output Data request, if the
+transmit packet in which we are accumulating data fills up with
+only a partial no. of bytes having been written to it, and the
+resources are such that we are not able to link the buffer to the
+Outgoing packet queue, or there are no more buffers to start
+another transmit working packet, the Driver should return to the
+Application with success and the number of bytes transferred is
+equal to some number less than the original requested? Or, should
+we do as the current driver apparently does-once a channel is
+put into the connected state, we at that time get a transmit
+working packet and make sure that there is enough room in the
+Outgoing queue. If not, the flow control state will be set, and
+reported during an i/o status call, so that the application will
+not even attempt a write.
+
+ I don't know how applications will respond to an indication
+ that less than the number of bytes requested has actually been
+ transferred.  I'd guess most applications don't bother to check
+ and the data gets lost.  The best approach is to have enough
+ buffers for a single application write available before setting
+ the flow control state off.
+
+43. In Driver Interface Manual, Report Input/Output Status
+function states that this function must be called periodically
+for the Device to process data packets. For Read Channel Status,
+it states that this function must be called periodically to
+process packets that change the state (q-bit packets) and to
+clear the interrupts. Is there any reason why both functions can
+not process all of the incoming packets available to it, by
+queueing the data packets so that they become available for
+reading by the application, and by processing and responding to
+all control packets?
+
+ There is no reason why both function cannot process all of the
+ incoming packets available, queueing data as appropriate and
+ handling control packets.
+
+44. What is value for timer for green ball or red ball out?
+
+ The red/green ball timeout is 8 seconds.
+
+45. Do we support interrupt packets? And if so, what gets done
+with interrupt packets received-there is no way to pass the
+information up to the application. And there appears to be no way
+for us to generate them.
+
+ INTERRUPT packets are not included in X.PC PVC procedures but
+ are a part of X.PC SVC procedures.  Treat them as
+ un-identifiable packets.
+
+46. Do we have to look for registration packets? Since
+specifications don't mention them, they would be treated as an
+indentifiable type packet. Is this OK?
+
+ Handle the same as INTERRUPT packets, question 45.
+
+47. It is true that we can not get a Reset on Channel 0? (will be
+treated as an error, via the state tables.)
+
+ RESET is not a valid packet on channel 0.  A DIAG packet is
+ sent if RESET packets are received.
+
+48. Packet Send field P(S) exists in diagnostic packets and
+interrupt packets, but appears to be ignored. Is this true, that
+only the data packet send sequence nos. are validated?
+
+ P(S) in every packet, with the exception of RR, RNR, and REJ,
+ is used in order to identify packets requiring re-transmission.
+ DIAG packets sent on channel 0 follow sequencing rules (see
+ answer to 55)
+
+49. Packet Receive field P(R) exists in restart confirmation,
+reset confirmation, diagnostic and interrupt packets, but appears
+to be ignored. Is this true, that only the data and flow control
+packet receive sequence nos. are processed?
+
+ P(R) in every packet, with the exception of RESTART
+ REQUEST/INDICATION and RESET REQUEST INDICATION packets, is
+ used to acknowledge packets sent previously. This applies to
+ all channels (see answer to 55)
+
+50. For window handling, the X.PC protocol specification talks
+about N packets allowed within the window, whereby only 1/2 N may
+be data packets. What else would there be, other than data
+packets?
+
+ Half the window is reserved for data packets, the other half of
+ the window for interrupt packets.
+
+51. The word data is used loosely-for example, in the state
+tables, up to the session state table, I assume data refers to
+all data packets, including q-bit packets. And in the session
+state table, data packet refers to non-Q bit data packets. And in
+the window handling descriptions, I assume data refers to all
+data packets, including q-bit packets.
+
+ In session state tables, "data packets" refers to non-Q bit
+ data packets.  In all other cases "data packets" refers to both
+ Q bit and non-Q bit packets.
+
+52. What is done with duplicate packets? Reject, as in X.PC Spec.
+4.3.5, or do nothing, as p. 16 of state table says.
+
+ Duplicate packets should be discarded.
+
+53. What is done with data packets which do not fall within the
+receive window? Diagnostic, or discard?
+
+ Received packets not in the window should be discarded, the
+ channel RESET, and a DIAGNOSTIC sent on channel 0.
+
+54. Is RR the only flow control packet which can be receved on
+channel 0?
+
+ The only packets valid on channel 0 are RR, REJ, DIAG, RESTART
+ REQUEST/INDICATION, and RESTART CONFIRM packets.
+
+55. What is done with RR on channel 0?
+
+ RR on channel 0 is used to acknowledge receipt of DIAG, RESTART
+ REQUEST/INDICATION, and RESTART CONFIRM packets. A normal
+ RESTART sequence is as follows:
+
+ DTE>                          <DXE
+
+ RESTART REQUEST P(R)=0, P(S)=0 >
+
+                              < RESTART CONFIRM P(R)=1, P(S)=0
+
+                       RR P(R)=1 >
+
+ Note that RESTART CONFIRM P(R)=1 is used to acknowledge the
+ RESTART REQUEST; RR P(R)=1 to acknowledge the RESTART CONFIRM.
+
+ If a DIAG were sent by either DTE or DXE after this exchange,
+ the DIAG P(R)=1, P(S)=1, and the RR in acknowledge would have
+ P(R)=2, as follows:
+
+ DTE>                          <DXE
+
+ DIAG P(R)=1, P(S)=1 >
+
+                               < RR P(R)=2
+
+ RR on channel 0 should be sent periodically if no other packets
+ have been sent on other channels.  The X.PC network server
+ expects some constant packet-level activity or the call is
+ hung.
+
+56. Clear Device description says to send a reset on all
+channels, and is used at the initialization of the Driver. Are
+resets acceptable prior to a restart during Device
+initialization? Is there any chance that Clear Device should send
+a restart instead of multiple resets?
+
+ A RESTART is acceptable in this case instead of sending a RESET
+ on each channel.
+
+57. For the error procedure described in the state tables, where
+it says that "apart from sending a diagnostic, ..., sending a
+reset request", I assume that this means a reset request packet
+is send with the diagnostic code within the reset request packet
+being set, rather than sending both a reset request and a
+diagnostic packet.
+
+ In the state tables, where sending a RESET REQUEST is
+ referenced the diagnostic indicated in the table is included in
+ the RESET REQUEST and a DIAGNOSTIC packet is not sent.
+
+58. Likewise, in the Restart State Table, where a Restart
+Confirmation received in state r1, or a Restart with a format
+error received in state r2, these 2 cases involve a diagnostic,
+and also sending of a restart packet. Can we use a restart packet
+with the appropriate diagnostic code set within the restart
+packet?
+
+ Handled as noted above in answer to question 57.
+
+59. In the ISO book, page 131, it says that when retransmission
+of reset has been tried N times, then a Clear Request packet is
+sent. I assume that at this point we would clear the session and
+put the channel in a call cleared state.
+
+On page 46 of the Driver Interface Spec, it says that when a data
+packet is received out of the window, a reset is sent, and the
+session is cleared. Does this mean that we send both a reset, and
+a clear session packet, in addition to clearing the session?
+State tables do not address the case of a data packet received
+out of the window.
+
+Are there others cases when we send a reset that we should also
+send a Clear Session packet, and clear the session? (Other cases
+of sending reset during a session would be with diagnostic error
+procedures defined in state tables, or data packet or reject
+packet transmitted N times; assume do not send Session Clear but
+wait for Application to do it based on channel being in Reset
+state.)
+
+ The primary purpose of the RESET packet is to indicate that
+ data packets have been received outside of the flow control
+ window.  See X.PC protocol spec page 17, paragraph 3 for a
+ description of the procedure in this case. RESET should be
+ handled like REJ and RR as a special case.
+
+ When the X.PC network server receives a RESET it clears the
+ network virtual circuit without sending a SESSION CLEAR.
+ The session state tables need modification if RESET does imply
+ a session clear. I'm researching what the current driver does,
+ and will have further comments tomorrow afternoon.
+
+60. In the case whereby a reset and clear session are send,
+should the DTE wait for the reset confirmation before sending a
+clear session?
+
+ As noted above in the answer to question 59, the RESET
+ procedure should be completed before a SESSION CLEAR is
+ initiated.
+
+61. Are there any timers in the DTE which should send an RR after
+a period of no activity (no packets sent or received)? None are
+defined in specs. The existing driver apparently has a 32 second
+timer. Should this be done? If so, would this be on all channels,
+or just channel 0?
+
+Note: This question was answered via comments received 03 Nov 86.
+There will be a timer on channel 0 for sending a "keep alive" RR,
+and a timer on other channels for an RR sent to relieve flow
+control, which will be reset when a data packet is received or
+flow control ready state is departed.
+
+ When there is no activity on any channel for a period of time,
+ currently set in the driver to 32 seconds, an RR packet should
+ be sent on channel 0 only, in order to keep the network server
+ from timing out the connection.
+
+62. In the existing driver, with the 32 sec. timer for sending
+RR, this timer is based on a 1200 baud rate. If the baud rate is
+changed via a Set Parameter function, do we readjust the timer
+value? And if so, is this true on any other timers?
+
+ The keep-alive RR timer for channel 0 does not need to be
+ adjusted.  If the baud rate is set less than 1200 baud, then
+ the timers should be adjusted upward.
+
+63. Driver Interface Spec, page 46, says to acknowledge data
+packet after every 2nd. packet, or last one in window. What if
+only one data packet is received? When exactly should an RR be
+sent, if it  not off of a timer? (Page 19 of X.PC Spec shows 4
+data packets received before RR sent.)
+
+ In general, it is best to acknowledge packets as soon as
+ possible in order to keep the flow control window from closing,
+ assuming buffer resources are adequate. If a packet is received
+ and there are no packets queued for transmission, then an RR
+ should be sent immediately.
+
+ When multiple channels are in operation, the situation gets
+ more complex. It is possible to exceed the re-transmission
+ timeout of the remote DXE for a particular channel when many
+ channels are simultaneously active. A short timeout, about 2
+ seconds, is recommended to force an RR on a channel which has
+ received data that has not yet been acknowledged.
+
+64. What should an RNR be sent? Is it when resources are low,
+i.e. only a minimum no. of buffers left? Do we limit the number
+of input data packets per channel that have not yet been
+processed by the PAD?
+
+ RNR should be sent whenever buffer resources get low. You can
+ consider the number of packets which have not yet been
+ processed by the PAD in your resource management scheme.
+
+ An approach commonly used is to establish a flow control
+ release point which is double the flow control set point.  This
+ allows for congestion to clear somewhat before resuming full
+ flow.
+
+65. Based on phone conversation, packets generated at the Link
+level for logical channels 1-15 have priority over data packets
+(i.e., Reset, Reset Confirmation, RR, RNR, Reject, Interrupt
+Confirmation). Since we have a round-robin approach to
+transmitting packets (we will process the channel outgoing
+queues, sending one packet per channel at a time, and then go on
+to the next channel), should we first send out all link level
+packets for all channels, and then if none, start to send data
+packets, or should we truly take each channel in rotation-if
+there are no link level packets, send a data packet, and then go
+on to the next channel?
+
+ All link level packets should be handled on a priority basis,
+ i.e. ahead of all data packets. You should send all link level
+ packets ahead of data packets.
+
+66. Is the DTE required to have timer T21 (Call Request
+Response)? This is listed in the timers in the X.PC Protocol
+Spec, page 21. Or will this be done at the Application level?
+
+ This timer should be implemented in the driver.  I will check
+ what the current driver does.
+
+67. In the Driver Interface Spec, page 46, it says to send the
+lost RR on a duplicate packet. What exactly does this mean, as
+duplicate packets are either discarded or rejected?
+
+ When a duplicate packet is received, it may be the result of an
+ RR previously sent being lost, and an RR or data packet with
+ the appropriate P(R) should be sent. The duplicate packet
+ should be discarded.
+
+68. Need verification for my understanding of the following item
+which was given over the phone:
+
+If the DTE receives or sends a Reset, the channel is put into a
+Reset Sent or Recieved State, and the session is cleared. (All
+incoming and outgoing packets for that channel are cleared; no
+session clear is sent to the network.) Upon the Read Channel
+Status command, the Reset Sent/Received state is returned to the
+Application, and the channel is put into a Call Cleared state.
+Upon the next Read Channel Status, the Call Cleared status is
+passed with the cause code, and the channel is then disconnected.
+
+ The session is not cleared when a reset is sent or received by
+ the driver.  The channel is temporarily put into RESET state.
+ When the application issues the read channel status function
+ call, the RESET state is returned to the application, and the
+ channel return to it's previous state.
+
+69. Restart state r3 (DXE Restart Indication), and Reset state r3
+(DTE Reset Indication) were redefined to be transient states,
+since ISO document says to return to ready state when the
+confirmation is sent out, and there is no visible means of
+getting out of this state. However, is it possible that this is
+truly a state, which is entered when the confirmation is sent,
+and exitted to ready state when the confirmation is acknowledged?
+
+ As per the note on page 115 of the ISO document, in the section
+ "CONVENTIONS USED IN THE STATE TABLE", state r3 and d3 can be
+ considered transient states.
+
+70. Should a data packet be validated for the M bit or D bit set?
+And if it should be, and either bit is set, is it the same
+diagnostic as for invalid GFI?
+
+ A data packet should be validated for the M and D bit, and
+ treated as an invalid GFI.
+
+71. Restart/Restart Confirmation packets allow for diagnostics
+38/39/81/82. 39 (Packet too long) and 81 (invalid cause code from
+DTE) are no problem; however, what would cause 38 (packet too
+short), and 82 (nonoctet aligned)? Is there any error relating to
+invalid cuase code from DCE?
+
+ Restart confirmation packets do not allow diagnostics.  I
+ assume you are referring to Restart Request/Indication packets.
+ Cause code 82 (non-octet aligned) has to do with bit framing.
+ X.PC is eight-bit asynchronous data, so this cause code can
+ never occur.  Cause code 38 (packet too short) is sent when a
+ packet has a valid GFI, LCI, P(R), P(S), and packet type, but
+ is missing additional data or control information, such as a
+ restarting cause on a Restart Request.
+
+ On page 47 of the X.PC protocol spec, it states that the DTE
+ must be able to accept any value in the restarting cause field
+ in order to allow for possible later extensions  of the defined
+ values of that field.
+
+72. Should there be corresponding diagnostics for reset and reset
+confirmation packets?
+
+ Reset Confirmation packets (page 46 of the X.Pc protocol spec)
+ have no diagnostic or cause code field. Diagnostic fields for
+ Reset Request/Indication packets are optional.  If used the
+ diagnostic field should follow CCITT standards.
+
+73. Is a flow control packet tested for the existence of any data
+bytes, which would result in a diagnostic? Likewise, do we care
+how many data bytes show up in a Diagnostic packet?
+
+ A flow control packet, such as RR or RNR, with additional data
+ can be treated as having a packet type identifier which is not
+ supported.
+
+74. Is there window processing (it would include diagnostic
+packets) for channel 0?
+
+ There is no window processing for flow control on channel 0,
+ however P(R) and P(S) are used for re-transmission.
+
+75. What is the diagnostic code for data packets which are out of
+the window?
+
+ A RESET packet is send when data is received out of the window.
+ DTE's will set the RESET cause code to 0; the diagnostic code
+ is optional.  A DCE will follow CCITT X.96; the diagnostic code
+ is also optional.  The same applies to RESTART packets.
+
+76. For PAD Parameters, is the following assumption correct?
+Parameter 16, Enable parity-if set, and in Tymnet Echo mode,
+the parity bit will be stripped (leaving 7-bit ASCII) when
+passing data to the Application. Data transmitted out the Link
+will be left as 8-bit data.
+
+ When in local (Tymnet) echo mode with the parity treatment
+ parameter set to YES, unchanged data enters the net. Also,
+ bytes made up of 7-bit ASCII with zero forced as the high-order
+ bit are placed in the input queue. These will go directly back
+ to the application to complete the echoing task.
+
+77. The above would not be true in MCI; would it also be true if
+neither MCI nor Tymnet?
+
+ Assume "neither MCI nor Tymnet" is the domain of character mode
+ in a PC-to PC type hookup. There are no network constraints,
+ and no imposition of either local or remote echo.
+
+78. PAD parameter 5, Echo of linefeed for return; does this echo
+both carriage return & line feed for a return char?
+
+ When accessing application data, CR changes into CR + LF for
+ both MCI and Tymnet type processes, when the appropriate
+ parameter specifies the insertion of LF (as case #5 in call
+ #29.)
+
+79. PAD parameter 6, Echo of return for linefeed; does this echo
+both carriage return & line feed for a linefeed char?
+
+ When accessing application data, LF changes into LF + CR +
+ DEL(0x7F) for Tymnet only when #6 in #29 is specified.
+
+80. Tymnet Echo Mode-do the following characters take the mode
+from local echo to deferred echo mode? Control-I, control-H, and
+Escape, with the PAD parameter being set to no local echo for
+these characters; all other control characters except for return
+and linefeed; and '7F', '7E', and '7D'. Assume there are no
+others.
+
+ '7E' and '7F' never lead to EDM. Escape, backspace, and tab
+ cause EDM if they aren't selected for local echo processing.
+ Tilde and all other codes less than '20' cause EDM.
+
+81. With the new list of call clearing codes received (07 Nov
+86), what is the code to be used with a session error as
+represented in the session state tables, which was to return
+error 9-Invalid PAD signal?
+
+ One doesn't exist, and needs to be specified.
+
+82. For T21 (Call Request Timer), do we follow what ISO states
+upon timeout-to send a session clear? And if so, what is the
+call clearing code-current list only addresses confirm timer
+expires
+
+ Send a session clear if T21 expires with a call clearing code
+ of 9.
+
+83. In the X.PC Protocol Spec, it states that clear session,
+reset and restart packets must have a diagnostic code field, even
+if it indicates no additional information. (pgs. 37, 45 and 48).
+We will have diagnostics with restart and reset (along with the
+cause code); must we also have a diagnostic with clear session?
+(is every control packet a fixed length as per format in spec?)
+And if so, what would value of diagnostic be with clear session?
+
+ The X.PC protocol specification states that CALL clearing
+ request and indiation packets have diagnostic code fields.  The
+ driver implements SESSION clearing Q-bit packets, which has no
+ diagnostic code field.
+
+84. For an Application Clear Session request, if the pending
+clear confirm timer value given is 0, is there a problem if we
+change it to 1/6 second?
+
+ No problem in setting it to 1/6 second.
+
+85. As per telephone conversation 11/12/86, our session state
+table will be changed for s1 state; s1 state will reflect what is
+in the X.PC State Tables, and packets in an unmapped logical
+channel will be treated via the s1 state.
+
+ As per phone conversation, your session  tables for S1 state
+ should follow the table provided in the X.PC state table
+ document.  Packets received on an unmapped logical channel
+ should be treated per S1 state.
+
+86. If we are in session state s6, and have sent a clear and are
+waiting for a pending clear confirm, and the Application does a
+send session clear request, is it ok not to send a second clear
+out, but simply reset the pending clear timer to the new value?
+
+ It is ok to reset the pending clear timer if the Application
+ issues a send session clear request while in session state s6.
+
+87. When the Device sends a Restart or Reset, should the cause
+code always be "Originated from DTE" (0)?
+
+ Initially, yes. If the device winds up a DCE due to restart
+ collision then one of the non-zero codes listed in Table 5 of
+ the X.PC protocol spec should be used (page 48).
+
+88. When a Restart is being issued with no diagnostic (Clear
+Device or Set Packet request), should we have a diagnostic of 0?
+
+ I would recommend no diagnostic code.
+
+89. If a Session Clear request is received from the Application,
+and Q-bit packets and/or data packets have not been sent out for
+that channel, do we flush those packets or simply append a
+Session Clear onto the end?
+
+ Note that the Application has some control either way. If he
+ doesn't want any packets flushed, he can issue I/O status
+ calls, until nothing is queued. Or, it can flush the output
+ data, which will just flush non-Q bit packets.
+
+ Append a session clear to the end.
+
+90. In Restart State Table, I had a diagnostic for RR/REJECT
+packets on channel 0 with an invalid P(R) if in state r2 (waiting
+for Restart Confirmation). I now believe that these packets
+should be discarded. If a Restart is issued, sequence nos. get
+reset to 0; therefore, an RR/REJECT packet with bad sequence nos.
+most likely was sent from the DCE prior to its receiving the
+Restart and initializing its sequence nos.
+
+ I agree with this point.
+
+ The same logic would also apply to the Reset State Table for
+ flow control packets with an invalid P(R). Also, in the ISO
+ document, all flow control packets received while in the reset
+ state d2 (waiting for a confirmation), are discarded.
+
+ It's ok to discard flow control packets in reset state d2.
+
+91. When in state r2 (having sent a Restart, and waiting for a
+Restart Confirmation), or in state d2 (Reset, and waiting for
+confirmation), do you really want to reject packets, or act on
+reject packets being received? As in question 90, it seems to
+make sense to discard packets that are out of sequence. And if a
+reject packet is received in sequence, it may be a reject packet
+sent by the DXE just prior to its receiving a restart or reset,
+and the P(R) may by coincidence by valid (rejecting a data packet
+with P(S) of 0, for example). By honoring the reject, we will
+retransmit the Restart or Reset packet.
+
+If the Restart packet or Reset were truly in error, it would be
+because of a bad CRC2. (Assuming CRC1 is correct, then P(S)
+should always be 0, and will not be rejected because of an
+invalid seq. no.).
+
+Take following case:
+
+DTE: data packet, P(S) = 15 ->
+    data packet, P(S) = 0 ->
+
+    receives packet in error,
+    reset, P(S) = 0 ->
+                          <- Reject, P(R) = 1 (reject of data
+                             packet 0 received prior to reset)
+
+ DTE will now retransmit reset packet!!!
+
+
+ or another case:
+
+ DTE: Restart ->
+                 <- data packet, P(S)=8 (send prior to
+                    receiving Restart)
+
+ Reject P(R)= 0 ->
+                  <- Reset Confirmation, P(S)=0
+
+                  (receives Reject, retransmits Confirmation)
+
+                  <- Reset Confirmation, P(S)=0
+
+By now, DTE is in state r1, Reset Confirmation packet is error,
+sends Restart, with diagnostic ->
+
+No need to go through all of this if reject packets are simply
+discarded, and not sent, in state r2 and d2.
+
+If we do not reject the packet, it will be retransmitted anyway
+because of the retransmission count for restart and reset
+packets.
+
+ Since the reset or restart will be re-transmitted, it's ok to
+ discard reject packets.
+
+92. Same with RR packets when in state r2 or d2 (waiting for
+confirmation). No need for RR packet, since Restart/Reset
+Confirmation packet will do acknowledgement. For X.25, all flow
+control packets are discarded when in state d2. (When in state
+r1, they are passed to the Session table, which for X.25,
+precedes the reset table.)
+
+ I agree with this point.
+
+93. Is there any need for T24-Window Status Transmission Timer,
+set when transmitting RR, RNR, REJECT, or Data packets? We have
+T27 for retransmitting reject packets and T25 for retransmitting
+Data packets. We have a timer to retransmit RR packets which
+clear an RNR packet. And for RR and RNR acknowledgements, if they
+do get lost, the data-retransmission timer on the DXE will force
+another acknowledgement.
+
+ No need, since all cases are covered.
+
+94. What action if taken is Restart is retransmitted R20 times,
+with no response?
+
+ None. If a call is attempted, it should be clear immediately
+ with a cause code of 13, remote X.PC lost.
+
+95. What action is taken is Reset is retransmitted R22 times,
+with no response?
+
+ Transmit a Restart Request and clear any virtual calls with a
+ code of 11, Restart Packet.
+
+96. The X.PC Protocol Spec. has T25 started with the first data
+packet transmitted through an empty window; it is not restarted
+with subsequent packets within the window. The ISO book has T25
+restarted with each data packet transmitted within the window,
+which would lessen the probability or having it time out causing
+a retransmission. Which do you want?
+
+ Per the X.PC specification.
+
+97. Keep Alive Timer on channel 0-what should be timer value?
+Answers received 03 Nov 86, 1d., state "If no packet
+transmissions have occured for a minute, an RR on channel 0
+should be sent as a keep-alive"; answer 61 on 07 Nov 86 states
+the current driver uses a 32 sec. timeout.
+
+ A 32 second timeout should be used.
+
+98. Ans. 15 on 07 Nov 86 says that a Reset Confirmation should be
+sent upon receipt of any Reset Request, regardless of LCI or
+state. Why is this true if in state d2 (DTE has transmitted
+Reset)? (See state tables). And ISO book states that for Reset
+Collision, the DTE does not transmit a Reset Confirmation, and
+considers the resetting is completed.
+
+ Once in r1 state, receiving a Reset Request is valid on at any
+ time on all channels except channel 0. Per ISO, in the case of
+ Reset collision no Reset Confirmation is necessary.
+
+99. As continuation of above question, why is Reset Confirmation
+sent upon receipt of any Reset Request, regardless of LCI? See
+Restart State table, whereby any packet other than Restart or
+Diagnostic with LCN = 0 results in a diagnostic.
+
+ If not in state d2, a Reset Confirmation should be sent, and an
+ RR received to acknowledge successful transmission of the Reset
+ Confirmation.
+
+100. When a Restart Request is received, should all channels be
+set to a call cleared state, and no session activity allowed
+until the Restart is complete?
+
+ Yes, with a call clearing code of of 11, Restart Packet.
+
+101. Enclosed is table of Restart procedures, as followed by a
+DTE talking to a DXE. What if both Devices were configured to be
+DCE's? What happens in the following 2 cases?
+
+ DCE                 DXE
+
+ 1.       <- Restart (not DTE)
+  Restart Confirm ->
+
+  (Becomes DTE?)
+
+2. Restart ->
+            <- Restart (not DTE)
+
+    (Is this same as Call Collision?)
+
+ There is no way to configure an X.PC DXE as either a DTE or
+ DCE.  X.PC DXEs are expected to support Restart collision
+ procedures, in which the DTE/DCE relationship is resolved.  If
+ both DXEs insist on being DTE or DCE, then the packet level
+ restart procedures never complete.
+
+ In case 1, the DCE may either become a DTE or send a DCE
+ restart. Case 2 is an example of Restart collision.
+
+102. When in packet mode, in which packet channel states is the
+Send Break function valid? It seems that only Connected would
+make sense. Also, is Send Break function valid on Channel 0 in
+packet mode?
+
+ Send break should only be valid in connected.  Send break is
+ never valid on channel 0.
+
+103. Concerning your answer to question #63... Are you suggesting
+that this 2 second timer put an RR into the queue? There is
+already one there, most likely. Or are you suggesting that the
+timer force immediate transmission of an RR? While it is not
+possible to transmit it immediately, as something else might be
+(and probably will be) transmitting at the time, it might be
+possible to force the Link level processing to access the timed
+out channel next when it is ready to transmit another packet.
+This, however, would disturb the rotating sequence of processing,
+which would in turn probably lead to more timeouts. Could you
+provide a full description of what this timer is supposed to
+accomplish?
+
+ The purpose of this timer is to insure that an acknowledgement
+ is sent, particularly in the case when multiple channels are
+ simultaneously active, before the other DXE times out and
+ starts re-transmitting.
+
+Restart Collision
+
+The following cases describe all possibilities of Restart being
+sent or received, and defines procedures in each:
+
+
+     DTE                 DXE
+
+1. Restart ->
+              <- Restart-Confirm
+   (Restart Complete, state = r1)
+
+
+
+2.            <- Restart (not DTE)
+   Restart-Confirm ->
+
+   (Restart Complete, state = r1)
+
+3.            <- Restart (DTE)
+   Restart-Confirm ->
+
+              become a DCE
+              (Restart Complete, state = r1)
+
+
+4. Restart ->
+              <- Restart (Not DTE)
+
+        (Restart Complete, state = r1)
+
+
+5. Restart Collision
+   Restart ->
+             <- Restart (DTE)
+
+        (Restart Complete, state = r1)
+
+        after time interval,
+   Restart ->
+
+   (Each side will be in a collision state;
+   each will have a different timer interval;
+   the one who receives the 2nd. Restart
+   first will confirm and become a DCE
+   (see case 3))
+
+ These sequences look ok.  Note that an RR should be sent
+ acknowledging a received Restart Confirmation.
+
+104. The 3.02 X.PC driver, when hooked up as a DCE to another PC,
+responds to a Restart Request from the DTE with a Restart
+Confirmation.  This Restart Confirmation has sequence numbers of
+P(S) = 0 and P(R) = 0.  The Tymnet XNS, on the other hand, sends
+a Restart Confirmation in the same situation with sequence
+numbers of P(S) = 0 and a P(R) = 1.  The Protocol Specification
+is unclear as to which of these is the correct set of sequence
+numbers, although based on how the rest of the protocol works, it
+seems that the XNS is performing correctly here.  Which should we
+generate in the new driver?
+
+ The Restart Confirmation P(R) should be 1. The driver has a bug
+ in it.
+
+Reset Request/Confirmation poses a similar question which
+should be resolved the same way.  I cannot, however, check this
+with the 3.02 driver due to problems generating resets and
+problems with the driver crashing or otherwise stopping
+transmission when a reset is received.  We have never been able
+to generate a Reset Confirmation with the 3.02 driver.
+
+ The Reset Confirmation P(R) should be 1.
+
+105. The times given in the Protocol Specification for T15/T25
+are far too short for speeds less than 2400 baud.  At 1200 baud,
+for example, T25 would time out before even a single window's
+worth of full data packets have finished transmitting.  (4
+packets, at roughly 135 characters each, is 540 chars, which
+takes over 4 seconds to transmit at 1200 baud.  T25 is 4
+seconds.)  The 3.02 driver appears to use a much longer timeout,
+although it is very difficult to trace it's usage, as this
+timeout is not referred to as T25 in any place save for some
+unused, commented out code. Likewise the T17/T27 pair seems too
+short.
+
+As another note, with multiple channels, the problem is even
+more acute, even at higher speeds.  So far, our tests using these
+timeouts almost invariably (and according to specification) end
+up sending several reject packets, followed by a reset.  This is
+not acceptable.
+
+ You're right, T25 is too short as specified.  XNS uses 8
+ seconds, and has an option to increase timeouts for low-speed
+ access by multiplying all timer values by a constant.
+
+106. Currently, in our driver, if we are DCE, when we start
+packet mode, there is no way to prevent the application from
+sending out a session request, due to the fact that we start up
+in R1 state. Starting in R2 state won't do the trick.  Upon
+examining the 3.02 driver code, we noticed a new state, R0, in
+which DCE is started, in which all packets are invalid and
+discarded save for Restart Request, which is treated as if it
+were in R1 state.  In the absence of any more appropriate
+solution, we would like to use this one.
+
+ This is acceptable.
+
+107. In the original Tymnet State tables (June 13,1986), it shows
+an error if a Disable Echo Control is received when Echo is
+disabled (State E1, page 28).  This causes a session clear in
+this case.  We are of the opinion that this should have read
+Discard, and a similar change should therefore be made in our
+version of the state table, state T0.  This is necessary since
+Tymnet, by default, issues a Disable Echo Control immediately
+after establishing a session, yet the user may have already
+disabled echo control.
+
+ This is acceptable.
+
+108. Could we have a list of default values for PAD parameters?
+We seem to have been incorrect on at least one of them.
+
+ Green and red ball timers, which are 1 and 8 seconds
+
+ ctli_ech    FALSE       /* PAD will not echo TABS locally,EDM/
+ ctlh_ech    FALSE       /* PAD will not echo BS locally, EDM*/
+ escp_ech    FALSE       /* PAD will not echo ESC locally,EDM.*/
+ lfoncr_ech  TRUE          /* TYMNET standard echo free LF on CR.*/
+ chr_forwrd  0x0D          /* forward on carriage return: echoio.*/
+ tim_forwrd  (EVNT_PSEC/3) /* forward timer for remote echo*/
+ ech_forwrd  (EVNT_PSEC/3) /* forward timer for local echo*/
+ bspace      '\0'          /* backspace char for mci editing.*/
+ lindel      '\0'          /* line delete char for mci editing.*/
+ linagn      '\0'          /* line redisplay char for mci editing*/
+ parity_enb  TRUE
+ pktlim      128           /* limit on number of bytes in one pkt*/
+ echo_mci    FALSE         /* MCI permanent echo off at start.*/
+ edit_mci    FALSE         /* MCI line edit off at start.*/
+ EDBUF_MAX   128           /* limits MCIPAD edit buffer length.*/
+ BUF_MAX     256           /* limits driver's i/o buffer length.*/
+
+
+109. After examination of the existing driver, we have discovered
+that Report I/O Status is considered valid EVERYWHERE, but if in
+an "invalid" state, returns a flow controlled output state.  We
+have changed our driver to match this, as at least two of the
+programs we need to be compatible with use this capability.
+
+ Please match the driver for this case.
+
+110. Tym/Comm, upon start up, attempts to do a Set Port
+Parameters while still in Wait Reset state.  The documentation
+and our driver do not allow this, so we return an error,
+whereupon Tym/Comm exits.  The 3.03 driver, after perfoming
+several tests, appears to allow this function everywhere.
+(Likewise the read port parameters function...)  I expect that we
+will be required to allow Set Port Parameters in all states, to
+remain compatible with Tym/Comm.  Please confirm this.
+
+ For compatibility, this should be allowed.
+
+This also brings up additional problems...  We have so far
+assumed that port parameters are set to their default when we
+reenter Wait Reset mode, to allow for the possibility of one
+program exiting, and another application starting up and assuming
+that the default parameters are available.  If Set Port
+Parameters is allowed anywhere, this reset to the default could
+possibly overwrite the parameters the application had set.  We
+can either leave this reset in and change the documentation of
+Clear Device to specifically state that it resets the port
+parameters, or we can take it out, and change the documentation
+of Device Reset to state that NO Default parameters may be
+assumed: The application MUST set it's own parameters using Set
+Port Parameters.
+
+ Let's change the documentation to state that Clear Device
+ resets the port parameters to their defaults.
+
+111. Tym/Comm also calls output data with sizes larger than 128
+when sending files.  The current driver also allows this,
+although the documentation says it is not allowed.  We can change
+this to match, although we may be forced, at times, to return a
+number of characters output which is less than the number
+requested, as there is no way to determine if enough additional
+buffer space for a second packet is available.  We might be also
+forced to return an error 14: Output attempted when flow
+controlled, in some cases.
+
+ For compatibility, also output data with sizes larger than 128
+ bytes.
+
+112. We still have trouble with certain timeouts.  (In particular
+the retransmission timeout and the Reject retransmission
+timeout...)  We are attempting to work out a set of timeout
+values which will allow the driver to work best.  Also, we will
+probably need to raise these values when running at baud rates
+lower than 1200, and when using more than one channel.  Ideally,
+we should match the XNS in most of these values.  In the answer
+to question #105, you mentioned that the XNS has an option to
+multiply timeouts by a constant at lower baud rates.  Could you
+tell us these constants?  Also, does the XNS modify timeout
+values when using multiple channels?
+
+ The constant used to multiply timeout values is an XNS
+ configuration parameter, and is set depending on the
+ anticipated characteristics of the network access.  For
+ example, we have users in Spain logging in through a PTT into
+ an XNS in France.  The French XNS may have a constant as high
+ as 4 or 5.
+
+ XNS does not modify timeout values when using multiple
+ channels.
+
+113. In a related vein, the major cause for most of our timer
+problems is due to the fact that a packet which has been
+retransmitted due to a timeout is almost always Rejected, since
+the first packet usually made it through intact.  (This often
+causes futher retransmissions which are in turn rejected, causing
+even more problems...) This is described in detail in the
+Protocol Specification (pp 18-20) and is integral to the error
+recovery.
+
+The existing driver does NOT do this.  It instead ignores the
+extra packet.  I suspect that this is not a bug, but rather by
+design, to avoid the problem mentioned above.  After much
+thought, it occurs to me that the same error recovery could be
+obtained by sending an RR packet upon receiving a packet with a
+P(S) equal to the last P(S) received, instead of the usual REJ
+packet. (All other out of sequence packets are treated as
+usual.)  This would still be compatible with all other
+implementations of X.PC, and would increase reliability.
+
+ In my response to link state table questions, 11/03/86, 1c, I
+ stated that duplicate packets received after sending a REJ are
+ to be discarded.  Sending an RR with the latest P(S) is
+ allowable.
+
+114. Concerning the XNS...  What makes the XNS decide to return
+to character mode (and give a login prompt) or remain in packet
+mode when the last session has been cleared?  We have seen both,
+and are interested in what determines this.
+
+ XNS never returns to character mode.  It is possible that the
+ circuit may be lost between the CONSAT and XNS, in which case
+ the CONSAT will issue the logon prompt.
+
+115. The function which Set Interrupt is to call upon the Event
+occurring is supposed to return via an IRET.  This, should
+be explicitly documented in the Interface manual, since many
+users will probably think they can use any compiled routine,
+which would be untrue.  Is is okay to fake a software interrupt
+(with a PUSHF and a far CALL?) or must we use a software vector?
+The "fake" software interrupt is less likely to cause problems
+with other software interrupt using programs.  A real interrupt
+will allow relocation of the interrupt by the application.
+
+ I'd agree that a 'fake' software interrupt is less likely to
+ cause problems with other programs, but may cause problems with
+ applications using the Set Interrupt function.
+
+ Since this is a compliance issue, resolution depends on whether
+ any applications are using this function. I would suggest that
+ unless you know that no application is using this function,
+ that it remain as a software vector.
+
+116. The forwarding timeout seems to have different meanings when
+it is zero depending on if you are in MCI Echo Mode or not.  In
+modes other than MCI Echo, if the timeout is zero, we forward all
+data immediately.  In MCI Echo mode, they apparently expect that
+if the timeout is zero, it will NOT forward any characters until
+either the buffer is full, or the forwarding character is
+entered.  Could you describe exactly when a forwarding timeout of
+zero means to forward immediately, and when it means not to
+forward at all?
+
+ The forwarding timeout for MCI Echo operates as you've
+ described, i.e. if zero no characters are fowarded until one of
+ the other forwarding conditions is reached.  In Tymnet Echo
+ mode, a forwarding timeout of zero means to forward
+ immediately.
+
+:MSG#:I95129
+ IN#:  50
+ TO: KCI      
+FROM: NTD      P/DRISCOLL
+SENT: 18 FEB 87 18:23:24
+READ: 19 FEB 87 09:22:59
+ CC: KCI  NSMS.S/KIM  NTD.L/MAURER  NTD.B/CARHART  NTD.J/ERICSON
+     NTD.P/DRISCOLL  NSMS.B/FULTZ  QSATS.E/MOORING  QSATS.M/ARNETT
+SUBJ: Answers
+
+117. We would like to use the CMT Demo for testing.  The document
+we have describing how to log in to this demo states that we
+should type "logon salesXX/demo" or "logon salesXX/demotso" but
+does not specify a valid XX to use.  We have tried several with
+no success.  Could you check and tell us a valid code?
+
+ Steve Kim to arrange this.
+
+118. Concerning your answer to question #19, the vector for Link
+Statistics is #32.  We have this implemented currently as a
+single parameter function returning an array of six integers.
+
+ This is ok.
+
+119. Concerning your answer to question #82, I assume that the
+"9" you are referring to is the Invalid PAD Signal error?  (Which
+is not yet defined, see #81.)
+
+ Yes.  The next code available will be used for Invalid PAD
+ signal.
+
+120. Green Ball timers.  In question #108, you state that the
+Green Ball timer is 1 second.  In question #18, it is 165 ms.  In
+question #44, it is 8 seconds.   Which do you prefer?
+
+ The current driver operates well with GB timer of 1 second, RB
+ timer of 8 seconds.
+
+121. Concerning questions #52, #67, and #113, we seem to have
+some terminology trouble with figuring out the handling of so
+called "duplicate" packets.  While, conceptually, these packets
+seem obvious to detect, in actually there is no way currently
+defined to do so.  Since a "duplicate" packet is, by nature, out
+of sequence, it is caught by the code which checks for packet out
+of sequence, and thus generates a REJECT.  (See Pg. 17 of the
+X.PC State Tables.)
+
+ In question #113 I proposed a method of detecting a duplicate
+packet (which I didn't realize they were at the time...) which
+could be placed in front of the check for being in sequence.
+This is to see if the P(S) of the incoming packet is equal to the
+expected P(S) minus one.  Thus we would be defining the term
+"duplicate packet" as being another packet with the sequence
+number last received.  We also would be setting priorities on the
+initial validity checks given in the State Diagrams, page 17.
+For the size of the window as currently given, this method of
+detection should work quite well.  With a larger window size, we
+could run into trouble, but since window size is not currently
+changable, we should be alright doing this.
+
+ I agree with this approach.
+
+122. In clarification of 105.  For every level of baud rate below
+1200 we increase the retransmission of data (T25) and the
+retransmission of rejects (T27) timer multiplier by one.  In
+addition, for each channel above 2 we add one to the multiplier.
+
+ I'd suggest that you have some way of allowing the multiplier
+ to be specified at run time as well.
+

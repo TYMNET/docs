@@ -1,0 +1,66 @@
+CHANGES.DAT
+
+Version 4.00 is a complete rewrite of the driver, to make
+it more readable, maintainable, perform better, to cover more
+error situations as well as to add features.  Many problems which
+the old driver would have aborted to DOS upon encountering will now
+instead return an error to the application.  Since this is a
+complete rewrite, there may be slight differences in the driver's
+reaction to some events.  We have attempted to match the old driver
+as closely as possible.  Specific changes have been made, to
+improve the driver or fix known bugs, and are listed below:
+
+
+1) There are now command line parameters which allow you to specify
+various options which could previously only be changed by modifying
+the code and recompiling.  See README.DAT for a detailed
+description of these parameters.
+
+2) The driver may now be unloaded after use, by specifying a
+command line parameter.  See README.DAT.
+
+3) The driver is now an EXE file instead of a COM file.
+
+4) The driver now uses the INT 8 hardware timer interrupt vector
+for it's internal timing needs.  If your program changes the 0x8
+vector after performing a non-zero device reset (it shouldn't),
+then you must specify the -T command line parameter, which
+tells the driver to set and reset the INT 8 vector at load and
+unload times, rather than at Device Reset time.  See README.DAT and
+X.PC Driver User Documentation for more information.  
+
+5) In character mode, it is now possible to cancel a received XOFF
+by turning off the xonxoff port parameter and turning it back on
+again.  See X.PC Driver User Documentation.  
+
+6) When a break is received (hardware break in character mode, or
+break packets in packet mode) the break received bit is set and is
+not cleared until a Report I/O Status has been performed.  See
+X.PC Driver User Documentation.  
+
+7) The link statistics call in the Driver Interface Specification
+has finally been implemented, although the details have changed.
+See the X.PC Driver User Documentation for a full description.  
+
+8) Packet retransmission timeouts are somewhat more forgiving than
+in previous versions.  There should be fewer retransmissions now
+which were caused because of low baud rate or number of open
+channels.
+
+9) The driver now safely supports up to 15 sessions open at the
+same time.  Note that buffer space requirements for this number of
+channels is higher than the default buffer space.  The larger
+amount can be specified at load time via a command line parameter.
+See README.DAT.
+
+10) The driver, in DCE mode, now properly issues Restart
+Confirmation packets with a P(R) of one instead of zero.  This
+matches the Protocol and the XNS.  It will still accept a Restart
+Confirmation with a P(R) of zero, to be compatible with the old
+driver.
+
+11) The driver uses a new set of call clearing codes, which is now
+the official set of clearing codes, and overrides the conflicting
+sets listed in the Driver Interface Specification and the PAD
+Protocol Specification.
+

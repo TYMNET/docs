@@ -1,0 +1,104 @@
+README.DAT - April 30, 1987        Notes for Version 4.00
+
+Included are the programs LINEMON.EXE, CALLMON.EXE, and AI.EXE.      
+These are test programs created for our own use during develop-
+ment. Users should be warned that these come as a unsupported
+freebies. Of course we would like to know about bugs even if
+these are not part of the project.  
+
+Using The Driver:
+
+The -B command line parameter allows you to adjust the size of the
+internal data buffer.  We have tested with the following sizes:
+1 Virtual circuit   Min. 2750  Rec. 3500
+6 Virtual circuits  Min. 7500  Rec. 10000
+15 Virtual circuits Min. 22500 Rec. 30000
+The default is -b6000 which is ok for 3-4 virtual circuits.  These
+are only guidelines.  A well behaved application that is reading
+all the channels can operate with far less than the size
+recommended.  On the other hand, an application that is not doing a
+good job of reading from the driver may never have enough memory.
+
+The -U parameter unloads the driver.  Terminate and stay resident
+programs must be unloaded in the opposite order from loading.  To
+do this we recommend using a batch file.  For example the following
+batch file is used with the IMM1 application:
+
+XPC.EXE -b3000
+IMM1.EXE
+XPC.EXE -U
+
+The -X parameter specifies the interrupt vector used by the driver.
+Note that the application must also be capable of referencing a
+different vector.  If you specify a different vector when loading,
+you must also specify it when unloading.
+
+The -T parameter causes the driver to chain on the timer interrupt
+vector at load time rather than when the device is reset as
+documented.  Applications which change the 0x8 hardware timer
+interrupt after the X.PC device reset should use this flag.
+(For example, Smartym 3270)
+
+The -C parameter causes the driver to ignore CTS.
+
+Any other illegal parameter will cause a help/useage message to be
+displayed.
+
+Below is a rough memory map of the driver:
+
+Code   30000
+Static  6000
+Stack   2000
+Timers  3000
+Comm Buf 500
+-B buf  6000  This can be changed with the -b parameter.
+       -----
+Approx  48K
+
+To compile and link the code:
+
+1) If you have not installed Microsoft C 4.0 and the Microsoft
+Macro Assembler, do so at this time.
+
+The directions for installing your Microsoft C 4.0 on the hard disk
+are given on page 22 of the Microsoft C User's Guide.  Follow them
+with one modification: wherever it specifies \BIN, \INCLUDE, or
+\LIB, use \MSC\BIN, \MSC\INCLUDE, and \MSC\LIB, respectively,
+instead.  This way, these three directories do not clutter up the
+root directory of your hard disk.  If you have already installed
+the compiler, you will have to modify the autoexec.bat below.
+
+To install the Microsoft Macro Assembler 4.0, simply make a \MASM
+directory on your hard disk, and copy the assembler disk to it
+completely.
+
+2) Modify your AUTOEXEC.BAT
+
+SET INCLUDE=\XPC\HDR;\MSC\INCLUDE
+SET LIB=\MSC\LIB
+PATH \MSC\BIN;\MASM
+SET TMP=\
+
+If you have entries already for the PATH, place them AFTER the
+entry for \MSC\BIN.  If you have installed your Microsoft C 4.0 in
+other directories, use the appropriate directory names.  
+
+Use the version of the linker that comes with the 4.0 compiler. 
+The one that comes with the assembler does not work correctly.
+
+Then execute the following batch files:
+
+C> CMPXPC.BAT     /* This will compile the X.PC driver */
+C> CMPUTL.BAT     /* This will compile the utilities */
+C> LNKXPC.BAT     /* This will link the X.PC driver */
+C> LNKUTL.BAT     /* This will link the utilities */
+
+(Note that MAN.EXE is supplied, and not compiled or linked with the
+scripts.)
+
+Read the .BAT files for more detail.
+
+A Lint script (LINTXPC.BAT) is also on the \XPC directory.  Of
+course Gimpel's PC Lint must be properly installed in the path
+command of the autoexec.bat for this to work.
+

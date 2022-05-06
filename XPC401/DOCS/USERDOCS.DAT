@@ -1,0 +1,346 @@
+USERDOCS.DAT - April 28, 1987
+
+Notes for programmers using the X.PC 4.00+ Driver.
+
+* References to the "Old" driver, are to versions before 4.00.
+
+* Report I/O Status - This function is the heart and soul of the
+driver. It should be called frequently whenever connected to
+anything. It MUST be called just prior to any call to Output Data
+or Input Data. When no Input or Output Data calls are being
+performed, and no data is expected from the other side, it is ok to
+miss some time, but you should try to call it every couple of
+seconds.
+
+* Output Data - Be sure to get the I/O status first, and don't call
+this function if the output status is 2. This function, if passed
+less than 128 characters, will almost always send everything. Do
+not depend on this. Always check the amount actually transferred.
+The later versions of the driver allow more than 128 bytes to be
+Output at one time. It is recommended that the user refrain from
+doing this. If, however, the application does decide to take
+advantage of this, then you MUST check the number of bytes output,
+as it is possible that less was sent than expected. There is also
+a potential of getting a flow control error in this case. If the
+driver reports 0 bytes sent, try reading data from the driver
+before repeating the send. The driver may have run out of buffer
+space for the send.
+
+* It is a good idea to read all the data available in the driver
+before outputing data. This frees up buffer space in the driver.
+It is essential that you do this if you are running multiple
+channels with local echo.
+
+* Read Channel Status - This does not have to be called as often,
+as long as Report I/O Status is being called. During call setup
+and clearing, however, this function should be called regularly.
+It should also be called every second or so to make sure that the
+channel state hasn't changed unexpectedly.
+
+Note the new Reset Received or Sent state in the Driver Interface
+Specification. After you read this state, the state will return to
+whatever it was before the reset occurred. Processing of this
+state is up to you, and does not necessarily require a Session
+Clear or the like, but be warned:  This state usually is
+accompanied by some loss of data across the link. This loss is
+unavoidable, due to the nature of the problem which caused the
+reset. A reset generally occurs if enough packets are rejected in
+a row without any valid packets being received in between. It
+generally means that something is wrong with the physical link,
+usually in the form of too much noise.
+
+Channel states sometimes don't go the way you might predict, due to
+errors or lack of resources. Whenever you check channel status,
+always include code which would cover all of the different states.
+(The most common mistake is to assume that a state must have
+changed because a function which changes it has been called. See
+notes on other functions below.)
+
+The old driver sometimes crashed on a call to read status of
+channel zero. With the new driver, channel zero should be checked
+every once in a while to see if something odd has happened. (It
+also sets it back to Connected state.)  No action is required on
+these problems, but it is likely that the user will wish to do
+something about it. Most of the problems which might show up on
+channel zero would have cleared your sessions, anyway.
+
+Call clearing codes have changed due to conflicts between the PAD
+specification and the Driver Interface spec. (And the XNS, for
+that matter.)  Make sure you have the correct ones.
+
+* Clear Device - This should be called as a prelude to the very
+first connection. It probably should be called between each
+additional connection. It can never hurt to call this whenever
+disconnected. It should also be called before your program exits.
+When called, the port parameters are reset to their default values.
+
+* Read Device Status - Most of the entries are constant and can be
+ignored for now. While the docs list several "default" values,
+make no assumptions that these are the values in there. It is
+possible (even likely) that these values have been modified by
+earlier calls to the driver.
+
+* Device Reset - Only the port address is taken from the passed
+DSS. The device state changes as specified in the function.
+Everything else is constant. This function should be called just
+before you try to make your connection, with a non-zero port.
+
+Changing interrupt vectors (either the 0x8 timer, or the comm
+vector corresponding to the port address) while the port is active
+is likely to cause problems. If necessary, be certain to chain the
+interrupt properly. The new driver does this with the 0x8 timer.
+(The old driver does so too, but with the 0x1C timer instead.)
+
+Also be warned that the reverse is true as well... If your program
+is using either of these vectors and does not want the driver to
+modify them, be aware that Device Reset sets both interrupts as
+well as the 8250 and 8259. With the comm port this is usually not
+fatal. With the timer, problems could cause the program to hang.
+If you wish to use the 0x8 timer without having to worry about X.PC
+modifying it, then use the -T flag whenever loading it. This flag
+forces X.PC to take the timer vector at LOAD time, so as long as
+you pass the interrupt through to the old vector (an absolute MUST
+for anyone using this vector...) there should be no conflict.
+
+When Device Reset has been called with a non zero port, the driver
+believes it has total control over that port. Fiddle with it at
+your own peril.
+
+Finally, remember to set a zero port before you exit your program
+(or call Clear Device). Otherwise, the interrupts are still left
+active. Not a good idea.
+
+* Set Character State - When it says "All Packet Channels..." in
+the docs, it does not include channel Zero, which cannot be
+disconnected in any case. Older versions of the driver may
+complain, but work anyway. Or they may not complain and not work.
+If you get an error 19 when you set character state and you are
+certain you closed all your channels, then you have an old driver
+and should update it.
+
+* Set Packet State - The new driver disables XON/XOFF explicitly.
+This should not be any problem as it restores it with Set
+Character State.
+
+* Set Port Parameters - XON/XOFF defaults to ON, not OFF. The
+default baud rate is 1200. (This is not a modification. It was a
+misprint in the docs.)
+
+This function is now callable in any state. This is to maintain
+compatibility with the old driver. It is, however, advisable to
+call this function only in Character or Packet states, when a non-
+zero port address has been set.
+
+In character mode, if Report I/O Status reports flow controlled due
+to receipt of an XOFF, the only method of clearing this (while
+remaining connected) in the old driver is to receive an XON. In
+the new driver, it is possible to clear this condition by calling
+this function with the XON/XOFF parameter set to 0 (disabled) and
+again to set it back to normal. This may not clear the flow
+condition instantaneously, but will begin transmission again so
+that flow will soon be cleared, unless, of course, the host sends
+another XOFF.  By setting XON/XOFF off, the flags preventing
+transmission due to XOFFs are cleared, and this allows the rest to
+work.
+
+* Read Port Parameters - The parity, data bits, and XON/XOFF status
+will report what the user had set them to, even though in packet
+mode these are forced to NO parity, 8 data bits, and XON/XOFF off.
+
+* Test DCD - Make good use of this function. It is the best way to
+determine if you have lost carrier. Upon loss of carrier in packet
+mode it is the application's responsibility to take appropriate
+action.
+
+* Send Break - The new driver will not send another break in packet
+mode if the outgoing buffers are full. No error is returned. The
+old driver allowed the application to overfill the buffers with
+breaks and then crashed, so this is actually an improvement.
+
+In character mode, this function sends a physical break of at least
+250ms. (The new driver sends for about 330 ms.)  Control remains
+with the driver until this is completed.
+
+* The break and error detected flags, when set, remain set until
+read, whereupon they are cleared. This is different break handling
+than the old driver, which set the break flag when a break began,
+and cleared it when the break finished. (In packet mode it was
+almost impossible to see a break.)
+
+This function can be called almost at any time (save when in Wait
+Reset state) but will return Output flow controlled unless in
+character mode, or on a Connected channel.
+
+* Send Session Request - Remember to put the CR at the end of the
+string. It is important when logging on to Tymnet. Do not put a
+LF at the end. As mentioned above, just because this function has
+been called is no reason to assume that you are now in Pending
+Session Accept. Allow for ANY state to be there. (Especially
+DISCONNECTED.)
+
+* Send Session Clear - Because of the pending clear confirm timer,
+the session may still be considered connected by the other side.
+It is usually a good idea to send a logoff string to the host
+before clearing the session. In fact, it is usually best to send
+the logoff string and wait for the host to clear the channel
+itself, if possible.
+
+* Session Answer Set - Use Send Session Clear with a short timeout
+to stop waiting on this. Again, I that it is important to assume
+that just about any channel state could appear here.
+
+* Set Interrupt - Hardware interrupts are almost always disabled
+during this routine, so make it fast. Long interrupts could cause
+loss of incoming character data. Do NOT call the driver from an
+interrupt routine, not even to Reset Interrupt. The driver will
+not allow it. (For that matter, If the driver is executing a
+function and your application manages to gain control, it cannot
+call the driver again until the driver returned from it's function.
+There are built in safeguards preventing this.)
+
+The routine called, is an interrupt routine. This means that it
+must return with an IRET instruction. It should be careful about çästack usage and all registers used must be restored before you
+return.
+
+Timers and Checkpointing reset themselves automatically when done.
+Modem Status does not.
+
+* Set PAD Parameters - Default forward timeout is 1/6 second. Most
+applications will probably want to set this longer.
+
+* Link Statistics - Redefined and implemented as follows:
+
+Function Name      : Link Statistics
+Function Code      : 32
+Parameter 1 (i)    : Link Statistics Structure
+
+The device return various link statistics. This is a destructive
+read, after which the values are reset to zero. Device reset will
+also reset these values. Framing errors, Overrun errors, and
+Parity errors are counted at all times, even in packet mode. The
+format for the Link Statistics Structure is as follows:
+
+   CRC errors          :   Word
+   Framing errors      :   Word
+   Overrun errors      :   Word
+   Parity errors       :   Word
+   Packets sent        :   Word
+   Packets received    :   Word
+
+
+
+==================================================================
+A simple pseudo-code description of connect and session actions
+follows:
+
+   Clear Device
+   Device Reset with non-zero port address
+   Set Port Parameters for character mode.
+   Begin character mode loop
+       Report channel status for channel 0
+       if channel state is call cleared,
+           process error and exit communicaions
+       Every several loops, check Carrier Detect
+           If Carrier Detect is OFF
+               Display "Lost Carrier"
+       Report I/O Status
+       if there is any data in the input queue,
+           read input data
+           display input data
+       if there is any data to be written out
+           Report I/O Status
+           if output status is not flow controlled
+               Output Data
+       If the user wishes to stop,
+           break out of loop
+       If the user wishes to go to packet mode
+           enter packet mode:
+       loop.
+   Device Reset with zero port address
+   Clear Device
+   Exit
+
+
+enter packet mode:
+
+   Set Packet Mode
+   Get session request data from user
+   Begin connect loop
+       Read Channel Status
+       if status is Disconnected
+           Send session request
+       if status is Connected
+           break out of connect loop
+       if status is Call Accepted
+           Read Session Data
+           display the data
+       if status is Call Cleared
+           display Call Clear cause code
+       if status is Pending Incoming Call, Incoming Call Arrived,
+           or Pending Acceptance
+           clear call:
+       if user wishes to exit
+           Read Channel Status
+           if status is not Disconnected
+               clear call:
+           Set Character Mode
+           return
+       loop.
+
+   Begin packet mode loop
+       Every several loops, check Channel status
+           If status is Disconnected
+               Display "Channel disconnected"
+               Set Character Mode
+               return
+           else if status is Call Cleared
+               Display Clear cause code
+               clear call:
+               return
+           else if status is not Connected
+               clear call:
+               return
+       Every several loops, check Carrier Detect
+           If you care about carrier detect status, and
+               Carrier Detect is OFF
+                   Display "Lost carrier"
+                   clear call:
+                   return
+       Report I/O Status
+       if there is any data in the input queue,
+           read input data
+           display input data
+       if there is any data to be written out
+           Report I/O Status
+           if output status is not flow controlled
+               Output Data
+       If the user wishes to stop,
+           clear call:
+           return
+       loop.
+
+
+clear call:
+
+   Clear call loop
+       Read Channel Status
+       If status is Disconnected
+           Display "Channel disconnected"
+           Set Character Mode
+           return
+       else If status is Call Cleared
+           Display Clear cause code
+       else if status is not Pending Clear Confirm
+          Send Session Clear **
+
+
+** The timeout for the session clear generally seems to work best
+at around 5 or so seconds. If you want to use values much larger
+than that, then you may want to give the user a way to stop waiting
+and return immediately. In this case, you could issue a SECOND
+session clear with a minimal (1/6th second) timeout and you would
+then disconnect quickly. You do not want to return from clear call
+until you are in Disconnect state unless it is an emergency. (If
+you need to exit and *cannot* wait for Disconnect, issue a Clear
+Device, then exit.)
+

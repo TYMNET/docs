@@ -1,0 +1,287 @@
+XPCSTYLE.DAT - March 14, 1987
+
+KCI C Programming Language Style Guidelines
+-------------------------------------------
+
+
+Large programs are broken down into smaller modules. Each module
+contains one or more related functions, and a limit of
+approximately 500 lines of code per module is suggested.
+
+Each module is broken down into several parts:
+
+  Module description - a comment which contains a description of
+    the module's contents and purpose. This comment may also
+    include a copyright notice and revision information.
+
+  Inclusion of header files
+
+  Local definitions - Any #defines, typedefs, and structure
+    definitions used ONLY by functions within this module should
+    be placed here, preferrably in that order. Any of these which
+    will be used by more than one module should be placed in a
+    header file, which is included in all modules needing them.
+
+  External, global, and static variables - In that order. One to
+    a line. Each of these should have a short comment explaining
+    their use. Grouping may be alphabetical by name, type, or
+    both, or by usage, as long as grouping is consistant
+    throughout all modules.
+
+  Functions - All functions should be coded according to the
+    formatting conventions described in the excerpt from the
+    Whitesmiths manual. Each function should have a short
+    explanitory comment above it. Order of functions is usually
+    based on a top-down approach, although this is not necessarily
+    required. A consistent method of ordering is, however,
+    essential.
+
+
+Variable Names
+
+ Variable names should accurately reflect what they do. Names
+like "quotient" and "abort_code" are much more meaningful than "q"
+or "abt". Abbriviations may be used sparingly, as long as what they
+are abbriviating is obvious. On the other hand, variable names
+like "last_character_from_input_file" are unnecessarily long and
+should be avoided. All variable names should be in lower case
+only, with underscores seperating words. Function names follow the
+same rules as variable names.
+
+
+Defines
+
+ #define statements should be used with care. All constants
+should be declared with an upper case name, using similar naming
+rules as for vaiables. Macros may be lower case when used to
+simulate a function, otherwise they should be upper case.
+
+ Some things NOT to use define statements for:  Never use a define
+to redefine a C operator (such as NE for "!=" or EQ for "==" or MOD
+for "%"). Do not use defines to index partially into an array of
+arrays or a structure.
+
+
+Comments
+
+ Comments on code should be concise and to the point. They are
+there to clarify code, and as such should not mimic what the code
+says; rather, they should explain what the code actually
+accomplishes and/or why it is done.
+
+ Comments may be placed either: 1) directly above the statement(s)
+to which they refer, in which case they should be indented to the
+same level as the code, or 2) to the right of the statement. In
+this case, the comment should be placed at least one tab stop to
+the right of the end of the statement, and should not extend the
+line beyond 80 characters. (Additional lines may be used, aligning
+the text of additional lines with the text of the first line.)  In
+addition, some attempt should be made to align all comments which
+are on the right side of statements with each other.
+
+ Examples:
+
+
+      LOCAL TEXT input_char;        /* last character received */
+      LOCAL BOOL delay;             /* signal to delay 30 seconds
+                                     * before transmitting.
+                                     */
+
+
+      /*
+       * If three or more packets have been received,
+       * process them
+       */
+      if (buffers_used > 0)
+          process_buffers(buffers_used);
+
+
+Goto statements:
+
+ While there *is* such a statement in the language, it is best to
+behave as if there isn't. If you think you've found a good excuse
+to use this statement, examine your code again.
+
+
+Expressions using ? and :
+
+ If these expressions get too elaborate, it is usually best to
+change them to an if-else statement. This usually is more
+readable, and generally compiles to identical code.
+
+
+<The following is an excerpt from the Whitesmiths, Ltd. C ŠProgrammer's Manual, April 1984, pp. I-28 through I-31.>
+
+
+FORMATTING
+
+While it may seem a trivial matter, the formatting of a C program
+can make all the difference between correct comprehension and
+repeated error. To get maximum benefit from support tools such as
+editors and cross references, one should apply formatting rules
+rigorously. The following high-handed dicta have proved their
+worth many time over:
+
+Each external declaration should begin (with optional storage class
+and mandatory type) at the beginning of a line, immediately
+following its explanatory comment. All defining material, data
+initializers of function definitions, should be indented at least
+one tab stop, plus additional tab stops to reflect substructure. 
+Tabs should be set uniformly every four to eight columns.
+
+A function body, for instance, always looks like:
+
+TYPE name(arg1, arg2, arg3)
+   TYPE1 arg1;
+   TYPE2 arg2, arg3;
+   {
+   <local declarations>
+
+   <statements>
+   }
+
+This example assumes that arg2 and arg3 have the same type. If no
+<local declarations> are present, there is no empty line before
+<statements>.
+
+<local declarations> consist of first extern (IMPORT), then
+register (FAST), then auto (no storage class specifier), then
+statis (INTERN) declarations; those are sorted alphabetically by
+type within storage class and alphabetically by name within type. 
+Comma separated lists may be used, so long as there are no
+initializers; an initialized variable should stand alone with its
+initializers. FAST and auto storage should be initialized at
+declaration time only if the value is not to change.
+
+<statements> are formatted to emphasize control structure,
+according to the following basic patterns:
+
+   if (test)
+       <statement>
+
+   if (test)
+       {
+       <statement>
+       <statement>
+       ...
+       }
+   else
+       <statement>
+
+   if (test1)
+       <statement>
+   else if (test2)
+       <statement>
+   else if (test3)
+       ...
+   else
+       <default statement>
+   switch (value)
+       {
+   case A:
+   case B:
+       <statement>
+       ...
+       break;
+   case C:
+       <statement>
+       ...
+       break;
+   default:
+       <statement>
+       ...
+       }
+
+   while (test)
+       <statement>
+
+   for (init; test; incr)
+       <statement>
+
+   for (; test; incr)
+       <statement>
+
+   for (init; ; )
+       <statement>
+
+   FOREVER
+       <statement>
+
+   return (expr);
+
+Note that, with the explicit exception of the else-if chain, each
+subordinate <statement> is intended one tab stop further to the
+right than its controlling statement. Without this rule, an else-
+if chain would be written:
+
+   if (test 1)
+       <statement>
+   else
+       if (test 2)
+           <statement>
+       else
+           if (test 3)
+               <statement>
+           ...
+               else
+                   <default statement>
+
+Within statements, there should be no empty lines, nor any tabs or
+multiple spaces imbedded in a line. Each keyword should be
+followed by a single space, and each binary operator should have a
+single space on each side. No spaces should separate unary or
+addressing operators from their operands. A possible exception to
+the operator rule is a composite constant, such as (GREEN|BLUE).
+
+Parentheses should be used whenever there is a hint of ambiguity. 
+Note in particular that & and | mix poorly with the relational
+operators, that the assigning operators are weaker than && and ||,
+and that << and >> are impossible to guess right. The worst
+offender is
+
+   if ((a & 030) != 030)
+       ...
+
+which does entirely the wrong thing is the parentheses are omitted.
+
+If an expression is too long to fit on a line (of no more than 80
+characters) it should be continued on the next line, indented one
+tab stop further than its start. A good rule is to continue only
+inside parentheses, or with a trailing operator on the preceding
+line, so that displaced fragments are more certain to cause
+diagnostics.
+
+
+--End of Excerpt--
+
+Some final notes:
+
+ Functions with many levels of indenting (usually five or more) as
+well as those larger than 1 or 2 pages of code should probably be
+split out into one or more subfunctions. This is a general
+guideline, but not a rule.
+
+
+ It is generally best to surround all C operators by spaces. 
+Hence:
+
+          if (x==1)
+
+ is better written:
+
+          if (x == 1)
+
+ Note that parenthesis, being seperators themselves, do not apply.
+
+
+ A function call should not include a space between the function
+name and the parenthesis. This seperates function calls from
+keywords followed by parenthesis, where a space should be included.
+ Ex:
+
+      funct (p1, p2);          is WRONG
+      funct(p1, p2);           is RIGHT
+
+      for(a; b; c)             is WRONG
+      for (a; b; c)            is RIGHT
+

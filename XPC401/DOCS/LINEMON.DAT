@@ -1,0 +1,94 @@
+LINEMON.DAT - March 13, 1987
+
+
+MON is a simple line monitor created to observe the flow of X.PC
+packets without interpreting hexadecimal dumps. To use MON you
+will need a PC or AT with 256K of memory, two IBM compatable serial
+ports installed and a special cable described below. MON was
+created to meet KCI's immediate debugging needs with very little
+time. Although we would like to bring it up to our distribution
+standard of quality some day it currently is provided "as is".
+Having warned the reader this is a quick and dirty program
+I will admit that we really do use it for testing.
+
+The line monitor operates by attaching a second input to each of
+the lines used by the device to be monitored. Since a standard
+serial port has about half input and half output connectors the
+line monitor requires two serial cards for its input. This all
+assumes that the RS232 drivers used are capable of driving two
+inputs reliably. We have been using this at 9600 bps with the
+standard IBM cards and it works fine.
+
+The cabling needed for the line monitor is a male to female cable
+that has had lines bridged to output to a pair of serial cards on
+the monitor machine.
+
+Test DTE           bridge          Test DCE
+Female   <-----------------------> Male
+                  |  |
+                  |  |
+   Monitor 1 <----    ----> Monitor 2
+   Female                   Female
+
+Pins 1-8, 20 are connected between the Test DTE and Test DCE.
+
+The monitor cables are connected between the following pins and the çätest cable:
+
+Test       Mon  Pin  Desc.
+Cable      #    #
+
+GND 1      Both 1    GND
+TX  2      1    3    RX
+RX  3      2    3    RX
+RTS 4      1    5    CTS
+CTS 5      2    5    CTS
+DSR 6      2    6    DSR
+GND 7      Both 7    GND
+DCD 8      2    8    DCD
+DTR 20     1    6    DSR
+
+My standard test cable is a flat ribbon cable of 6 foot length with çäboth a male and a female 25 pin connector on each end. (Many break çäout boxes are the same way.)  So all I need is a male 9 conductor çäcable with 1-8, 20 connected on one end, and a pair of female çäconnectors on the other end. The female connectors will be marked çä"COM1, Mon 1, DTE" and "COM 2, Mon 2, DCE".
+
+After setting up the cabling type invoke the program.
+
+MON [-O<filename>] [-D] [-M] [-S<baud rate>]
+
+Where:
+
+O<filename> opens the filename and saves everything to the disk.
+
+D disables the screen display. Since this was written with very
+  limited budget, the screen update is pretty slow. You may use
+  this to disable the screen if you are overrunning the buffers.
+  Of course using this option without the O option above makes
+  little sense.
+
+M masks the high bits as displayed. Removes high bits so ASCII
+  characters appear correctly on the display.
+
+S<baud rate> sets the baud rate. Baud rate is specified as in
+  calls to the driver. For example, -s4 is 1200 bps, -s5 is 2400
+  bps. The default is -s4.
+
+An Esc exits the program.
+
+The TIME field is the number of timer ticks since the program was
+invoked. A timer tick occurs 18.2 times a second. The time stamp
+is placed on the packet as it is taken from the interrupt level
+routines in the monitor. Since in character mode this only happens
+after the buffer fills the time stamp should be ignored while in
+character mode. Once the restart confirmation has occured the time
+stamp becomes reliable.
+
+When looking at data packets remember that the type field contains
+the first byte of data.
+
+On the right hand side of the display the first field is the
+channel number. The second is either a < or > indicating the
+direction and the last is a description of the packet type.
+
+One last note, remember that full duplex data that is not echoed by
+your application is still in the listing. This includes any
+passwords you have used and they may need to be edited from trace
+dumps that you might distribute.
+

@@ -1,0 +1,140 @@
+AIDOC.DAT - March 13, 1987
+
+
+AI.EXE is a simple application created to allow testing of X.PC çäfunction calls.
+
+To use AI you will need a PC or AT with 256K of memory and a serial
+port. AI was created to meet KCI's immediate debugging needs with
+very little time. Although we would like to bring it up to our
+distribution standard of quality some day, it currently is provided
+"as is". Having warned the reader this is a quick and dirty
+program I say that we use it for testing.
+
+To use AI, first load the X.PC driver. Then invoke the AI program:
+
+AI [-x<vector #>]
+
+X<vector #> specifies the interrupt vector to be monitored. This
+   defaults to -x7A to match the driver.
+
+Once in the program "function ?" will be displayed. Type ? to get
+a list of available functions. There are several control keys
+which have been defined to help test the XPC Driver. See the
+source code for a full more information.
+
+The following functions are available to the operator:
+
+1. The defined application functions.
+
+The application functions are accessed by their application
+function number number (0 - 32). Depending on the function
+specified, the operator is prompted to enter the data which is
+needed by the application function. When the driver the application
+function has completed, AI will display the status returned by the
+driver and any data moved to application parameters.
+
+2. TTY Mode (Valid in Character or Packet Mode)
+
+When the device is in character or packet mode, the 't' function
+allows the operator to transfer data to and from the driver. Once
+in tty mode, any charactered enterred by operator is transmitted
+and characters received are read. AI will generate the report I/O
+status function, read data and write data functions which are
+needed to transfer data. All input data is displayed. To exit 'tty'
+mode, the operator must press the ESCAPE key.
+
+3. TTY Mode With No Display (Valid in Character of Packet Mode)
+
+The 'u' function has the same functionality of 'tty' mode except
+that the input data is not displayed. This function  was developed
+so that transfer timings would be as accurate as possible.
+
+4. Sending Files in 'tty' Mode
+
+When AI is in tty mode (via the 't' or  'u' function), the control-
+f key will prompt the operator for the name of a file which is to
+be sent. The file send will stop when ESCAPE is pressed.
+
+5. Open Channel When in Packet Mode.
+
+Use 'o' to open a new channel. This is used when testing more than
+one channel. Because of the way AI is set up, the 'o' command must
+be used after packet mode has started but before an attempt is made
+to establish a session (i.e. after function 4 and  before session
+request (19) or set pending session request (21)). All pad
+functions will apply to all of the open channels; i.e. read data,
+write data, session functions etc. This is how we quickly do test
+on 15 virtual circuits. The operator should not attempt to open
+channel 0 with the 'o' function. The open channel function should
+be used for packet channels (1-15).
+
+6. Close Channel When In Packet Mode.
+
+Use the 'c' function to close an open channel. The 'c' function
+should be executed after the channel state has gone to disconnected
+and before exiting packet mode. Channel 1 should remain open.
+
+7. Test Flush Output Data When In Packet Mode.
+
+The  'l'  function was created to test flush output data when
+device is in packet mode. Processing is similar to tty mode. For
+the test to work, the operator must enter control-f. AI will ask
+for  the name of the file to start sending. AI will call
+application functions to output data and then flush output data.
+Most of the data should be flushed.
+
+8. Test Flush Input Data When in Packet Mode.
+
+The 'm' function was created to  test flush input data when device
+is in packet mode. The flush input data will call application
+functions to input data and then flush input data. Most of the
+input data is flushed.
+
+9. Display Input/Output Statistics
+
+Function 33 was originally added to allow for the display of
+diagnostic variables. If function 33 is selected, it creates a file
+called DIAG.SAV containing the current diagnostic information. The
+diagnostics statistics are meaningless unless the driver has been
+compiled with DEBUG defined. Function 33 is also used to display
+the number of bytes requested for input, the number of bytes
+input, the number of bytes requested for output and the number of
+bytes output. The number of input bytes requested will not equal
+the number input  because, the input bytes requested for input is
+always set to 128. If the driver was compiled with DEBUG defined,
+function 33 also displays  statistics containing the number of
+bytes transferred by the pad and by link. If duplicate packets are
+sent by link, the number of bytes outputted by the link is
+meaningless.
+
+Press the ESCAPE key to exit from function 33.
+
+10. Display Update/Interrupt variable.
+
+The function 34 was added to display the contents of a variable to
+be updated by an event update.
+
+11. Update the Update/Interrupt variable.
+
+The functioin 35 was added to initialize the event update variable
+and the event interrupt location. The operator should execute
+function 34 , folllowed by function 35 and function 34. The
+contents of the update variable will change from 0 to 1.
+
+12. View Contents of Update Variable and Interrupt Storage Word
+
+The 'v' function performs function 34 until the operator presses
+the ESCAPE key. The allows for the operator to set up an
+interrupt, and then start the 'v' function. The operator can see
+when the interrupt location changes values.
+
+Press the ESCAPE key to exit view function.
+
+13. Exit Program or Function
+
+The ESCAPE key will exit from the current process. 'ttymode' can
+be exitted by pressing the ESCAPE key. 'view event variables' can
+only be exitted by pressing the ESCAPE key. Press the ESCAPE key
+to exit the program.
+
+

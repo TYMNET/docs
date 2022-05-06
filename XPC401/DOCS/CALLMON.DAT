@@ -1,0 +1,67 @@
+CALLMON.DAT - March 13, 1987
+
+CALLMON is a simple utility created to monitor the flow of calls
+between the X.PC driver and the application. To use CALLMON you
+will need a PC or AT with about 90K more memory than you need to
+load just the X.PC driver and your application. CALLMON was
+created to meet KCI's immediate debugging needs with very little
+time. Although we would like to bring it up to our distribution
+standard of quality some day, it currently is provided "as is".
+Having warned the reader this is a quick and dirty program I will
+admit that we really do use it for testing.
+
+To avoid loosing data when a program crashes, CALLMON currently
+opens, writes and closes the output file with each call to the
+driver. This is extremely slow even on a fast machine and will
+likely effect the performance of a sensitive application, not to
+mention causing probable timeouts. If this program is ever
+upgraded to distribution standard options will be added to control
+when and what output is sent to the disk.
+
+To use CALLMON, first load the X.PC driver, then invoke the
+monitor:
+
+CALLMON [-C] [-O<filename>] [-S] [-T] [-U] [-V] [-X<vector #>]
+
+Where:
+
+C Closes the file every 100 lines of data rather than on every
+  line of data. This will speed up operation, but will allow you
+  to loose up to 100 lines of output should the system crash.
+
+O<filename> opens the filename and saves everything to the disk.
+  You may include a path. The program uses a filename of
+  -oMONDAT.DAT on the current directory by default. (Note that by
+  "current directory", we really mean *current* directory. If you
+  should change directory after loading the call monitor, and you
+  did not specify a particular pathname, the monitor will attempt
+  to open the file in whichever directory you moved to, often
+  with bad results. For safety, always specify a complete path
+  name for the output file.)
+
+S Reports the status as last read with report I/O status with each
+  I/O call. Also reports the number of times report I/O status 
+  has been called since the last I/O call. This is most usefull
+  when used with the -T terse mode.
+
+T Terse mode. Supresses the output of Report I/O status, Read CD,
+  Read device status, Read channnel status calls. This is used to
+  limit the amount of output generated.
+
+U Unloads the call monitor. Terminate and stay resident programs
+  like CALLMON should be unloaded in the same order they are
+  loaded. Be sure to specify the -X vector number if the program
+  was loaded with one.
+
+V Verbose mode. Includes the actual data in I/O calls.
+
+X<vector #> specifies the interrupt vector to be monitored. This
+  defaults to -x7A to match the driver. In order to monitor the
+  driver, this vector MUST be the same as the driver's.
+
+When you are done with your application, remember that the CALLMON
+must be unloaded first if you plan on unloading the X.PC driver.
+It's a good idea to unload it after it's use, otherwise, you may
+find it writing more info to the disk when you next try to use the
+driver.
+

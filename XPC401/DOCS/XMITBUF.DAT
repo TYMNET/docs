@@ -1,0 +1,197 @@
+XMITBUFF.DAT - March 13, 1987
+
+
+Transmitter queue layout and usage.
+
+The transmit queue consists of an array of pointers (called xmtptr,
+pointing to buflet chains) and associated lengths (called xmtlen),
+as shown below. (There are also a set of flags (Not shown, called
+xmtflg). These flags are set to true if the corresponding xmtptr
+must be freed after being transmitted.)
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P1     |   |    25     |
+   |-----------|   |-----------|
+  1|    P2     |   |    100    |
+   |-----------|   |-----------|
+  2|    P3     |   |    255    |
+   |-----------|   |-----------|
+
+
+The current code uses three entries in the array, but can easily be changed.
+
+The queue works as follows:
+
+  1) Upon transmit interrupt:
+        - if it is not already transmitting a buflet chain
+           - If this first entry has a zero length (xmtlen[0] == 0)
+              - If the second entry has a non-zero length
+                 - rotate the lengths and the pointers one position towards
+                   the zero index, leaving the original zero index length
+                   (ie. zero) and pointer in the last slot.
+              - If the second entry is zero length
+                 - The transmit queue must be empty so cease transmission
+           - take the first entry in the queue and begin transmitting it.
+
+        xmtlen[0] is used to count the number of characters remaining in the
+        current buflet chain.
+
+
+
+  2) At link level, upon having another buflet chain to transmit
+        - Examine the last entry in the transmit queue.
+        - If not zero
+           - the transmit queue is full: link must wait until later.
+        - If zero
+           - Turn off interrupts
+           - Searches the queue in reverse from the last entry for the
+             zero length entry immediately following the first non-zero
+             length entry in the queue.
+           - If in character mode or the xmtflg is set
+              - saves the pointer in that slot in a temporary location
+           - Put the pointer to the new data in the slot.
+           - Put the length in the slot.
+           - Turn interrupts back on.
+           - If in character mode or the xmtflg was set
+              - free the buflet chain saved in the temporary location.
+
+
+
+Examples:
+
+Given the above starting pointers, after transmitting 10 characters, the two çäarrays will look like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P1     |   |    15     |
+   |-----------|   |-----------|
+  1|    P2     |   |    100    |
+   |-----------|   |-----------|
+  2|    P3     |   |    255    |
+   |-----------|   |-----------|
+
+
+After transmitting the next 15 characters, the arrays will look like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P1     |   |    0      |
+   |-----------|   |-----------|
+  1|    P2     |   |    100    |
+   |-----------|   |-----------|
+  2|    P3     |   |    255    |
+   |-----------|   |-----------|
+
+
+After transmitting the next character (which is the first data character in
+the buflet chain P2), the arrays will look like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P2     |   |    99     |
+   |-----------|   |-----------|
+  1|    P3     |   |    255    |
+   |-----------|   |-----------|
+  2|    P1     |   |    0      |
+   |-----------|   |-----------|
+
+
+Until now, if link had wanted to send another chain, P4, it would have been
+balked by the fact that xmtlen[2] was not zero. But now it notices that this
+is no longer the case, performs its backward search (finding that xmtlen[2] is
+the first zero entry after all non=zero entries), and reassigns things, after
+which it can free up P1. The arrays now look like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P2     |   |    99     |
+   |-----------|   |-----------|
+  1|    P3     |   |    255    |
+   |-----------|   |-----------|
+  2|    P4     |   |    30     |
+   |-----------|   |-----------|
+
+
+Link doesn't have any more data for a while, so the transmitter goes merrily on
+its way, transmitting another 360 characters, and the arrays look like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P4     |   |    19     |
+   |-----------|   |-----------|
+  1|    P2     |   |    0      |
+   |-----------|   |-----------|
+  2|    P3     |   |    0      |
+   |-----------|   |-----------|
+
+
+...When link suddenly decides it has some more data to transmit. It examines
+xmtlen[2], it is zero. So it searches the list, finding xmtlen[1] is the next
+slot, swaps pointers, and frees up P2. The list now looks like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P4     |   |    19     |
+   |-----------|   |-----------|
+  1|    P5     |   |    100    |
+   |-----------|   |-----------|
+  2|    P3     |   |    0      |
+   |-----------|   |-----------|
+
+
+(If it had still more data, it could now use slot two, but it doesn't quite yet
+in this example.)  The transmitter chugs along for another 19 characters,
+leaving:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P4     |   |    0      |
+   |-----------|   |-----------|
+  1|    P5     |   |    100    |
+   |-----------|   |-----------|
+  2|    P3     |   |    0      |
+   |-----------|   |-----------|
+
+
+*Now* Link decides it has more data. And after the search it uses slot 2, NOT
+slot 0. This is because it needs the first zero entry after all non zero
+entries. This also happens to keep things in their proper sequence. The queue
+now looks like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P4     |   |    0      |
+   |-----------|   |-----------|
+  1|    P5     |   |    100    |
+   |-----------|   |-----------|
+  2|    P6     |   |    255    |
+   |-----------|   |-----------|
+
+
+Things continue... 355 characters are transmitted. The queue looks like this:
+
+
+      xmtptr          xmtlen
+   |-----------|   |-----------|
+  0|    P6     |   |    0      |
+   |-----------|   |-----------|
+  1|    P4     |   |    0      |
+   |-----------|   |-----------|
+  2|    P5     |   |    0      |
+   |-----------|   |-----------|
+
+
+Transmitter wishes to transmit another character:  Both the first entry and the
+second have zero lengths. Therefore the queue is empty, and transmission
+ceases.
+

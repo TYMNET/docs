@@ -1,0 +1,133 @@
+XPCANS2.DAT-April 28, 1987
+
+This is a continuation of XPCANS.DAT:
+
+122A. Concerning Red Ball/Green Ball logic. In our modified
+version of the state table for Tymnet Echo Mode, there is an entry
+for No Activity Timeout while in T3 state (Red Ball Out). This
+entry requires the sending of a Green Ball and a change to T2
+state. In both the older state tables and the description of these
+modes in the PAD specification, it implies that while a Red Ball is
+out, Green Balls should not be sent, only more Red Balls. The
+latter case is consistant with the actual activity observed in the
+3.03 version of the driver, and appears to perform the desired
+function much better, so we have modified our driver and the state
+tables to conform to the original specification. In fact, we can
+see no reason for the change.
+
+ TYMNET's Consat changes state from T3 to T2 after a short
+ inactivity timeout and sends a green ball. The additional logic
+ is an attempt to recover from losing a red ball.
+
+ The X.PC PAD is modeled after the Consat. In this case, the
+ evidence shows that deleting this logic does not interfere with
+ the echo process. Coupled with eliminating the overhead
+ incurred in trying to recover from a lost red ball, which is an
+ unlikely event anyway, I agree that the transition is
+ unnecessary.
+
+
+123. We are adding a -T option that will chain on the 0x8 timer
+interrupt at load time rather than at device reset. This is
+necessary for applications that modify the interrupt after device
+reset.
+
+ This is ok.
+
+124) There is some confusion on the proceedure which should be
+followed at loss of carrier in various modes.
+
+In character mode, we either set channel zero to call cleared
+with the Modem Status Lost clear code, or we do nothing in
+particular. In any case, input and output of data should be
+unaffected. (In 4.00C we changed the code to return the call
+cleared code for compatability with Smartym 3270.)
+
+In packet mode, it appears that the proper proceedure is to clear
+all connected channels, probably with the Packet Level Reset code,
+and to set channel zero to call cleared with the Modem Status Lost
+code. The driver should remain in packet mode. An inconsistancy
+here is the fact that the Certification document seems to assume
+that the driver automatically drops into character mode. This is
+not true currently, and is not desirable in any case, as the
+application will still be trying to read channel status, and if
+dropped into character mode, will get errors instead. (It should be
+the application's responsiblity to switch to character mode so it
+can ignore CD. Shared modem pools, digital PBXs and LAN serial
+servers frequently do not handle the handshaking signal correctly.)
+
+ In character mode, set channel 0 status to Modem Status Lost
+ clear code.
+
+ In packet mode, clear all connected channels with the Packet
+ Level Reset code and set channel 0 status to Modem Status Lost
+ clear code.
+
+ The certification procedure will be run expecting that the
+ driver in packet mode does not automatically change to
+ character mode when CD is lost.
+
+125) There is a question on the use of the Parity PAD parameter.
+Documentation suggests it has no effect other than to strip off the
+Most Significant Bit of all echoed bytes. There is no effect on
+data incoming from the host or outgoing to the host. Only echoed
+bytes are effected. Is this true?
+
+ The PAD Parity parameter only strips the most significant bit
+ of echoed bytes. There is no effect on data sent or received
+ between the PAD and the host.
+
+126) In our state diagrams for Tymnet Echo control, there is an
+error. It lists a change of state (And transmission of a Green
+Ball) to T2 (Green Ball Out) when the No Activity Timer times out
+in T3 (Red Ball Out) state. Since the documentation implies (And
+the existing driver confirms...) that a Green Ball is not sent
+while a Red Ball is out, it follows that this state change is not
+possible. The original state diagram (June 13, 1986) is correct
+for this case.
+
+ The state diagram is correct for the Consat. See response to
+ 122A.
+
+127) Ed Mooring has requested that the driver send a Restart
+Request packet with a Cause Code of 0xF1 upon changing from Packet
+mode to Character mode via a Set Character Mode function call.
+Although otherwise undocumented, he says that this informs the XNS
+to return to the "please log in:" prompt instead of waiting for the
+next Session Request in character mode.
+
+ This is ok.
+
+128) The 3.0x drivers all set DTR and RTS upon Device Reset,
+although the spec does not mention this. We have modified our
+driver (ver 4.00B) to conform to this and downloaded it to Cathy
+Chen so that she can continue testing without further problems
+along these lines.
+
+ Follow the example of 3.0x in setting DTR and RTS upon Device
+ Reset.
+
+Below is a summary of problems/solutions/changes to specifications çämade during X.PC 4.00 driver certification:
+
+* Cathy Chen reported to us a problem with dialing using Tymcomm. çäThis turned out to be an undocumented feature of the old driver, çänamely that it would set DTR and RTS upon Device Reset with a non-çäzero port address. (128)
+
+* Carrier Detect handling is changed so that it wil clear channel 0 çäwith clearing code 14 (Modem Status Lost) upon loss of Carrier, but çäwith no other action taken. This is the same in character and çäpacket mode.
+
+* The PAD Parity parameter only strips the most significant bit of çäechoed bytes. There is no effect on data sent or received between çäthe PAD and the host. (76,125)
+
+* The following changes to the driver specifications and driver çäcode were made:
+
+- The driver is sending a Restart Request packet with a Diagnostic çäCode of 0xF1 upon changing from Packet mode to Character mode via a çäSet Character Mode function call. This causes the XNS to generate çäthe "please log in:" prompt instead of waiting for the next Session çäRequest. (114,127)
+
+- The 1/6th of a second default character forwarding timeout has çäbeen changed to 1/3rd of a second. (8)
+
+- Upon receipt of a reset, the channel is cleared with a call çäclearing code of reset received. (9,21,38,56,59,60,68)
+
+- The reset diagnostic codes for packets out of window are now  1 çäfor invalid P(S) and 2 for invalid P(R). (75)
+
+- 0x7D (}), 0x7E(~) and 0x7F(del) now lead to EDM. (80)
+
+- Restarts issued with no diagnostic code are given a diagnostic çäcode of 0. (88) Version 4.00E.
+
+* The restart timeout when switching to packet mode has been çächanged from 180 secs. to 15 secs. Two call clearing codes 12 and çä13 with necessary timers recently documented by Ed Mooring were çäadded.
+

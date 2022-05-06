@@ -1,0 +1,18 @@
+-dNO_EXT_KEYS -u -h^2
+BLDCPKT
+CLINK
+DOLINK
+FLOWCTRL
+LINKINIT
+LINKINP
+LINKOUT
+LINKTIME
+PLINK
+RESET
+RESTART
+RSTCHNL
+SEQNUM
+TIMUTIL
+VALPKT
+CHGSTATE
+

@@ -1,0 +1,13 @@
+-dNO_EXT_KEYS -u -h^2
+DATA.C
+DUMP.C
+IOU2.C
+MON.C
+MONCHMOD.C
+MONCLINK.C
+MONDATA.C
+MONERROR.C
+MONPLINK.C
+MONVPKT.C
+PKTMSG.C
+
